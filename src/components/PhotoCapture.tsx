@@ -96,12 +96,19 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
-    if (videoRef.current && canvasRef.current) {
+    // Don't allow capture if there's a camera error
+    if (cameraError) {
+      console.log('Cannot capture photo: camera error present');
+      return;
+    }
+
+    if (videoRef.current && canvasRef.current && stream) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
-      if (context) {
+      // Check if video is actually playing and has dimensions
+      if (context && video.videoWidth > 0 && video.videoHeight > 0) {
         // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -113,9 +120,15 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
         const photoData = canvas.toDataURL('image/jpeg', 0.8);
         onPhotoCapture(photoData);
         stopCamera();
+      } else {
+        console.log('Cannot capture photo: video not ready or no dimensions');
+        setCameraError('Camera feed not available. Please try uploading a photo instead.');
       }
+    } else {
+      console.log('Cannot capture photo: missing video, canvas, or stream');
+      setCameraError('Camera not available. Please try uploading a photo instead.');
     }
-  }, [onPhotoCapture, stopCamera]);
+  }, [onPhotoCapture, stopCamera, cameraError, stream]);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -239,12 +252,15 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
                 <div className="text-white text-center max-w-sm px-4">
                   <p className="text-red-400 mb-4">📷 Camera Error</p>
-                  <p className="text-sm">{cameraError}</p>
+                  <p className="text-sm mb-4">{cameraError}</p>
+                  <p className="text-xs text-gray-300 mb-4">
+                    You can still upload a photo using the "Upload Photo" button after closing this camera interface.
+                  </p>
                   <button
                     onClick={stopCamera}
-                    className="mt-4 bg-white text-black px-4 py-2 rounded-lg"
+                    className="mt-2 bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                   >
-                    Close
+                    Close & Upload Photo Instead
                   </button>
                 </div>
               </div>
@@ -288,13 +304,17 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
               <button
                 type="button"
                 onClick={capturePhoto}
-                className="bg-white hover:bg-gray-100 text-black px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-colors flex items-center space-x-2"
+                className={`px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-colors flex items-center space-x-2 ${
+                  isLoading || cameraError 
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                    : 'bg-white hover:bg-gray-100 text-black'
+                }`}
                 aria-label="📸 Capture"
                 data-testid="capture-button"
-                disabled={isLoading}
+                disabled={isLoading || !!cameraError}
               >
                 <span className="text-2xl">📸</span>{' '}
-                <span>Capture</span>
+                <span>{cameraError ? 'Camera Error' : 'Capture'}</span>
               </button>
               
               <div className="w-20"></div> {/* Spacer for symmetry */}
