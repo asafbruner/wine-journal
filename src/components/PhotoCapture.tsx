@@ -218,6 +218,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
               type="button"
               onClick={stopCamera}
               className="text-white hover:text-gray-300 text-xl font-bold"
+              aria-label="Close camera overlay"
             >
               ✕
             </button>
@@ -273,12 +274,13 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
           </div>
 
           {/* Bottom controls - ALWAYS visible and at the bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black bg-opacity-50 z-30">
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black bg-opacity-50 z-50">
             <div className="flex justify-center items-center space-x-8">
               <button
                 type="button"
                 onClick={stopCamera}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-full font-medium transition-colors"
+                aria-label="Cancel"
               >
                 Cancel
               </button>
@@ -287,9 +289,11 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 type="button"
                 onClick={capturePhoto}
                 className="bg-white hover:bg-gray-100 text-black px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-colors flex items-center space-x-2"
+                aria-label="📸 Capture"
+                data-testid="capture-button"
                 disabled={isLoading}
               >
-                <span className="text-2xl">📸</span>
+                <span className="text-2xl">📸</span>{' '}
                 <span>Capture</span>
               </button>
               

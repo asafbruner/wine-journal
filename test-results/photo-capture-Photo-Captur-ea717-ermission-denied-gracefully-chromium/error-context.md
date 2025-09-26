@@ -33,7 +33,7 @@
         - generic [ref=e40]:
           - generic [ref=e41]:
             - heading "Take Wine Photo" [level=3] [ref=e42]
-            - button "✕" [ref=e43] [cursor=pointer]
+            - button "Close camera overlay" [ref=e43] [cursor=pointer]: ✕
           - generic [ref=e46]:
             - paragraph [ref=e47]: 📷 Camera Error
             - paragraph [ref=e48]: Unable to access camera. Camera not supported by this browser.
@@ -48,7 +48,7 @@
         - textbox "Tasting Notes" [ref=e59]
       - generic [ref=e60]:
         - button "Add Wine" [ref=e61] [cursor=pointer]
-        - button "Cancel" [ref=e62] [cursor=pointer]
+        - button "Back" [ref=e62] [cursor=pointer]
   - generic [ref=e63]:
     - img [ref=e65]
     - heading "No wines yet" [level=3] [ref=e67]

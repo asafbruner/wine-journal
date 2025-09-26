@@ -179,8 +179,9 @@ export const WineForm: React.FC<WineFormProps> = ({
               type="button"
               onClick={onCancel}
               className="btn-secondary"
+              aria-label="Back"
             >
-              Cancel
+              Back
             </button>
           )}
         </div>
