@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import type { WineFormData, WineAnalysis } from '../types/wine';
 import { StarRating } from './StarRating';
 import { PhotoCapture } from './PhotoCapture';
-import { WineAnalysisService } from '../services/wineAnalysisService';
 
 interface WineFormProps {
   onSubmit: (data: WineFormData) => void;
