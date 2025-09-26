@@ -2,12 +2,15 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Wine Journal Application', () => {
   test.beforeEach(async ({ page }) => {
+    // Clear localStorage before each test for better isolation
     await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
   });
 
   test('should display the main page with title and add button', async ({ page }) => {
     // Check page title and header
-    await expect(page).toHaveTitle(/Vite \+ React \+ TS/);
+    await expect(page).toHaveTitle('wine-journal');
     await expect(page.locator('h1')).toContainText('🍷 Wine Journal');
     await expect(page.locator('text=Keep track of your wine tastings and discoveries')).toBeVisible();
     

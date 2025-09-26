@@ -60,7 +60,7 @@ describe('WineService', () => {
   });
 
   describe('updateWine', () => {
-    it('should update existing wine and modify timestamp', () => {
+    it('should update existing wine and modify timestamp', async () => {
       const originalWine = WineService.addWine({
         name: 'Original Wine',
         rating: 3,
@@ -68,6 +68,8 @@ describe('WineService', () => {
       });
 
       // Wait a bit to ensure different timestamp
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const updateData: WineFormData = {
         name: 'Updated Wine',
         rating: 5,

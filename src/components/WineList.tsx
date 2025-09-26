@@ -34,14 +34,6 @@ export const WineList: React.FC<WineListProps> = ({
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
-  const handleSortChange = (newSortBy: 'name' | 'rating' | 'dateAdded') => {
-    if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(newSortBy);
-      setSortOrder('desc');
-    }
-  };
 
   if (wines.length === 0) {
     return (

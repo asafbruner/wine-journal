@@ -145,14 +145,76 @@ The application uses a consistent design system built with Tailwind CSS:
 
 ## 🚀 Deployment
 
-The application is configured for automatic deployment to Vercel:
+The Wine Journal application is ready for deployment with multiple options:
 
-1. Connect your GitHub repository to Vercel
-2. Set up the required environment variables:
-   - `VERCEL_TOKEN`
-   - `VERCEL_ORG_ID`
-   - `VERCEL_PROJECT_ID`
-3. Push to the `main` branch to trigger deployment
+### Option 1: Vercel (Recommended)
+
+The application is pre-configured for Vercel deployment with automatic CI/CD:
+
+#### Quick Deploy
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/wine-journal)
+
+#### Manual Setup
+1. **Fork/Clone** this repository to your GitHub account
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com) and sign up/login
+   - Click "New Project" and import your GitHub repository
+   - Vercel will automatically detect it's a Vite project
+3. **Deploy**: Click "Deploy" - that's it! Vercel handles the build automatically
+4. **Custom Domain** (optional): Add your custom domain in Vercel dashboard
+
+#### Automatic Deployments
+- **GitHub Integration**: Every push to `main` branch triggers automatic deployment
+- **Preview Deployments**: Pull requests get preview URLs for testing
+- **CI/CD Pipeline**: Includes automated testing before deployment
+
+### Option 2: Netlify
+
+1. **Build the app**: `npm run build`
+2. **Deploy to Netlify**:
+   - Drag and drop the `dist` folder to [netlify.com/drop](https://netlify.com/drop)
+   - Or connect your GitHub repo for automatic deployments
+
+### Option 3: GitHub Pages
+
+1. **Install gh-pages**: `npm install --save-dev gh-pages`
+2. **Add deploy script** to package.json:
+   ```json
+   "scripts": {
+     "deploy": "gh-pages -d dist"
+   }
+   ```
+3. **Build and deploy**: `npm run build && npm run deploy`
+
+### Option 4: Self-Hosted
+
+1. **Build**: `npm run build`
+2. **Serve**: Upload the `dist` folder contents to your web server
+3. **Configure**: Ensure your server serves `index.html` for all routes (SPA routing)
+
+### Environment Configuration
+
+The application works out-of-the-box with no environment variables required. All data is stored locally in the browser's localStorage.
+
+### Performance Optimizations
+
+The production build includes:
+- ✅ **Code Splitting**: Automatic chunk splitting for optimal loading
+- ✅ **Asset Optimization**: Minified CSS/JS with cache headers
+- ✅ **Tree Shaking**: Unused code elimination
+- ✅ **Gzip Compression**: Reduced bundle sizes
+- ✅ **PWA Ready**: Can be enhanced for offline functionality
+
+### Deployment Checklist
+
+- [x] TypeScript compilation passes
+- [x] All tests pass (unit + e2e)
+- [x] Build completes successfully
+- [x] Responsive design verified
+- [x] Performance optimized
+- [x] SEO meta tags included
+- [x] Error boundaries implemented
+- [x] Accessibility standards met
 
 ## 🔮 Future Enhancements
 

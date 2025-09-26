@@ -9,6 +9,13 @@ interface WineFormProps {
   onCancel?: () => void;
 }
 
+interface FormErrors {
+  name?: string;
+  vintage?: string;
+  rating?: string;
+  notes?: string;
+}
+
 export const WineForm: React.FC<WineFormProps> = ({
   onSubmit,
   initialData,
@@ -24,10 +31,10 @@ export const WineForm: React.FC<WineFormProps> = ({
     }
   );
 
-  const [errors, setErrors] = useState<Partial<WineFormData>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<WineFormData> = {};
+    const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Wine name is required';
@@ -70,7 +77,7 @@ export const WineForm: React.FC<WineFormProps> = ({
     }));
 
     // Clear error when user starts typing
-    if (errors[field]) {
+    if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
         [field]: undefined
