@@ -65,7 +65,8 @@ const WineJournalApp: React.FC = () => {
                 name: editingWine.name,
                 vintage: editingWine.vintage,
                 rating: editingWine.rating,
-                notes: editingWine.notes
+                notes: editingWine.notes,
+                photo: editingWine.photo
               } : undefined}
               submitLabel={editingWine ? 'Update Wine' : 'Add Wine'}
               onCancel={handleCancelEdit}
