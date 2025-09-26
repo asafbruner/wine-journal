@@ -16,9 +16,21 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const startCamera = useCallback(async () => {
+    setIsLoading(true);
+    setCameraError(null);
+    
     try {
+      console.log('Requesting camera access...');
+      
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported by this browser');
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment', // Use back camera on mobile
@@ -27,14 +39,48 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
         }
       });
       
+      console.log('Camera access granted, setting up video...');
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Wait for video to load
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          setIsLoading(false);
+          videoRef.current?.play().catch(console.error);
+        };
+        
+        // Handle video errors
+        videoRef.current.onerror = (e) => {
+          console.error('Video error:', e);
+          setCameraError('Failed to load camera feed');
+          setIsLoading(false);
+        };
+        
         setStream(mediaStream);
         setIsCapturing(true);
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please check permissions or use file upload instead.');
+      setIsLoading(false);
+      
+      let errorMessage = 'Unable to access camera. ';
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage += 'Please allow camera permissions and try again.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage += 'No camera found on this device.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage += 'Camera not supported by this browser.';
+        } else {
+          errorMessage += error.message;
+        }
+      }
+      
+      setCameraError(errorMessage);
+      alert(errorMessage + ' You can still upload photos using the "Upload Photo" button.');
+      setIsCapturing(false);
     }
   }, []);
 
@@ -44,6 +90,8 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
       setStream(null);
     }
     setIsCapturing(false);
+    setIsLoading(false);
+    setCameraError(null);
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
@@ -176,22 +224,51 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
 
           {/* Camera view */}
           <div className="flex-1 relative flex items-center justify-center">
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
+                <div className="text-white text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                  <p>Loading camera...</p>
+                </div>
+              </div>
+            )}
+            
+            {cameraError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
+                <div className="text-white text-center max-w-sm px-4">
+                  <p className="text-red-400 mb-4">📷 Camera Error</p>
+                  <p className="text-sm">{cameraError}</p>
+                  <button
+                    onClick={stopCamera}
+                    className="mt-4 bg-white text-black px-4 py-2 rounded-lg"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <video
               ref={videoRef}
               autoPlay
               playsInline
+              muted
               className="w-full h-full object-cover"
             />
             
             {/* Camera overlay guides */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-64 h-80 border-2 border-white border-dashed rounded-lg opacity-50"></div>
-            </div>
-            
-            {/* Instructions */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
-              <p className="text-sm">Position the wine bottle within the frame</p>
-            </div>
+            {!isLoading && !cameraError && (
+              <>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-64 h-80 border-2 border-white border-dashed rounded-lg opacity-50"></div>
+                </div>
+                
+                {/* Instructions */}
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                  <p className="text-sm">Position the wine bottle within the frame</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Bottom controls */}
