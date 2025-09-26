@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { WineFormData, WineAnalysis } from '../types/wine';
 import { StarRating } from './StarRating';
 import { PhotoCapture } from './PhotoCapture';
+import { TasteProfileComponent } from './TasteProfile';
 
 interface WineFormProps {
   onSubmit: (data: WineFormData) => void;
@@ -175,47 +176,57 @@ export const WineForm: React.FC<WineFormProps> = ({
         </div>
 
         {formData.analysis && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-green-800 mb-2 flex items-center">
-              🤖 AI Wine Analysis
-              {formData.analysis.confidence !== undefined && (
-                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                  {Math.round(formData.analysis.confidence * 100)}% confidence
-                </span>
-              )}
-            </h3>
-            <div className="text-sm text-green-700 space-y-2">
-              {formData.analysis.wineName && (
-                <div><strong>Wine:</strong> {formData.analysis.wineName}</div>
-              )}
-              {formData.analysis.wineType && (
-                <div><strong>Type:</strong> {formData.analysis.wineType}</div>
-              )}
-              {formData.analysis.region && (
-                <div><strong>Region:</strong> {formData.analysis.region}</div>
-              )}
-              {formData.analysis.vintage && (
-                <div><strong>Vintage:</strong> {formData.analysis.vintage}</div>
-              )}
-              {formData.analysis.grapeVarieties && formData.analysis.grapeVarieties.length > 0 && (
-                <div><strong>Grape Varieties:</strong> {formData.analysis.grapeVarieties.join(', ')}</div>
-              )}
-              {formData.analysis.tastingNotes && (
-                <div><strong>Tasting Notes:</strong> {formData.analysis.tastingNotes}</div>
-              )}
-              {formData.analysis.interestingFact && (
-                <div className="bg-green-100 p-2 rounded mt-2">
-                  <strong>💡 Interesting Fact:</strong> {formData.analysis.interestingFact}
-                </div>
-              )}
+          <div className="space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-green-800 mb-2 flex items-center">
+                🤖 AI Wine Analysis
+                {formData.analysis.confidence !== undefined && (
+                  <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    {Math.round(formData.analysis.confidence * 100)}% confidence
+                  </span>
+                )}
+              </h3>
+              <div className="text-sm text-green-700 space-y-2">
+                {formData.analysis.wineName && (
+                  <div><strong>Wine:</strong> {formData.analysis.wineName}</div>
+                )}
+                {formData.analysis.wineType && (
+                  <div><strong>Type:</strong> {formData.analysis.wineType}</div>
+                )}
+                {formData.analysis.region && (
+                  <div><strong>Region:</strong> {formData.analysis.region}</div>
+                )}
+                {formData.analysis.vintage && (
+                  <div><strong>Vintage:</strong> {formData.analysis.vintage}</div>
+                )}
+                {formData.analysis.grapeVarieties && formData.analysis.grapeVarieties.length > 0 && (
+                  <div><strong>Grape Varieties:</strong> {formData.analysis.grapeVarieties.join(', ')}</div>
+                )}
+                {formData.analysis.tastingNotes && (
+                  <div><strong>Tasting Notes:</strong> {formData.analysis.tastingNotes}</div>
+                )}
+                {formData.analysis.interestingFact && (
+                  <div className="bg-green-100 p-2 rounded mt-2">
+                    <strong>💡 Interesting Fact:</strong> {formData.analysis.interestingFact}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, analysis: undefined }))}
+                className="mt-2 text-xs text-green-600 hover:text-green-800 underline"
+              >
+                Hide Analysis
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, analysis: undefined }))}
-              className="mt-2 text-xs text-green-600 hover:text-green-800 underline"
-            >
-              Hide Analysis
-            </button>
+
+            {/* Taste Profile Display */}
+            {formData.analysis.tasteProfile && (
+              <TasteProfileComponent 
+                profile={formData.analysis.tasteProfile} 
+                size="md"
+              />
+            )}
           </div>
         )}
 

@@ -1,6 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 
+interface TasteProfile {
+  // Primary flavors (0-5 scale)
+  fruit?: number;
+  citrus?: number;
+  floral?: number;
+  herbal?: number;
+  earthy?: number;
+  mineral?: number;
+  spice?: number;
+  oak?: number;
+  
+  // Wine characteristics (0-5 scale)
+  sweetness?: number;
+  acidity?: number;
+  tannin?: number;
+  alcohol?: number;
+  body?: number; // Light, Medium, Full (1-5)
+  
+  // Primary flavor descriptors
+  primaryFlavors?: string[];
+  secondaryFlavors?: string[];
+}
+
 interface WineAnalysis {
   wineName?: string;
   wineType?: string;
@@ -8,6 +31,7 @@ interface WineAnalysis {
   vintage?: number;
   grapeVarieties?: string[];
   tastingNotes?: string;
+  tasteProfile?: TasteProfile;
   interestingFact?: string;
   confidence?: number;
   analysisDate?: string;
@@ -60,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
             {
               type: 'text',
-              text: `Please analyze this wine bottle photo and provide detailed information about the wine. 
+              text: `Please analyze this wine bottle photo and provide detailed information about the wine, including a comprehensive taste profile. 
 
 Return your analysis in the following JSON format:
 {
@@ -70,11 +94,35 @@ Return your analysis in the following JSON format:
   "vintage": "Year if visible (number only)",
   "grapeVarieties": ["Array of grape varieties if known"],
   "tastingNotes": "Expected tasting notes and characteristics based on the wine",
+  "tasteProfile": {
+    "fruit": 3,
+    "citrus": 2,
+    "floral": 1,
+    "herbal": 2,
+    "earthy": 3,
+    "mineral": 2,
+    "spice": 2,
+    "oak": 3,
+    "sweetness": 1,
+    "acidity": 4,
+    "tannin": 4,
+    "alcohol": 3,
+    "body": 4,
+    "primaryFlavors": ["Blackberry", "Plum", "Vanilla"],
+    "secondaryFlavors": ["Tobacco", "Cedar", "Dark Chocolate"]
+  },
   "interestingFact": "An interesting fact about this wine, winery, or region",
   "confidence": "Confidence level from 0.0 to 1.0"
 }
 
-Focus on what you can actually see in the image (label, bottle shape, color, etc.) and provide educated insights based on that information. If you can't determine something from the image, indicate lower confidence or omit that field.`
+For the taste profile, rate each characteristic on a scale of 0-5:
+- Flavor intensities (fruit, citrus, floral, herbal, earthy, mineral, spice, oak): How prominent each flavor category is
+- Wine structure (sweetness, acidity, tannin, alcohol): The wine's structural components
+- Body: 1=Light, 2=Light-Medium, 3=Medium, 4=Medium-Full, 5=Full
+- Primary flavors: 3-5 main flavors you'd expect to taste
+- Secondary flavors: 2-4 complex flavors from aging/winemaking
+
+Base your analysis on what you can see in the image (grape variety, region, vintage, wine style) and your knowledge of typical characteristics for that type of wine. If you can't determine something from the image, provide educated estimates based on visible wine type and region, but indicate lower confidence.`
             }
           ]
         }
@@ -102,6 +150,23 @@ Focus on what you can actually see in the image (label, bottle shape, color, etc
       vintage: analysisData.vintage ? parseInt(analysisData.vintage) : undefined,
       grapeVarieties: Array.isArray(analysisData.grapeVarieties) ? analysisData.grapeVarieties : undefined,
       tastingNotes: analysisData.tastingNotes || undefined,
+      tasteProfile: analysisData.tasteProfile ? {
+        fruit: analysisData.tasteProfile.fruit || undefined,
+        citrus: analysisData.tasteProfile.citrus || undefined,
+        floral: analysisData.tasteProfile.floral || undefined,
+        herbal: analysisData.tasteProfile.herbal || undefined,
+        earthy: analysisData.tasteProfile.earthy || undefined,
+        mineral: analysisData.tasteProfile.mineral || undefined,
+        spice: analysisData.tasteProfile.spice || undefined,
+        oak: analysisData.tasteProfile.oak || undefined,
+        sweetness: analysisData.tasteProfile.sweetness || undefined,
+        acidity: analysisData.tasteProfile.acidity || undefined,
+        tannin: analysisData.tasteProfile.tannin || undefined,
+        alcohol: analysisData.tasteProfile.alcohol || undefined,
+        body: analysisData.tasteProfile.body || undefined,
+        primaryFlavors: Array.isArray(analysisData.tasteProfile.primaryFlavors) ? analysisData.tasteProfile.primaryFlavors : undefined,
+        secondaryFlavors: Array.isArray(analysisData.tasteProfile.secondaryFlavors) ? analysisData.tasteProfile.secondaryFlavors : undefined,
+      } : undefined,
       interestingFact: analysisData.interestingFact || undefined,
       confidence: typeof analysisData.confidence === 'number' ? analysisData.confidence : 0.5,
       analysisDate: new Date().toISOString()

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Wine } from '../types/wine';
 import { StarRating } from './StarRating';
+import { TasteProfileComponent } from './TasteProfile';
 
 interface WineCardProps {
   wine: Wine;
@@ -89,31 +90,41 @@ export const WineCard: React.FC<WineCardProps> = ({
       </div>
 
       {wine.analysis && (
-        <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
-          <h4 className="text-xs font-medium text-green-800 mb-2 flex items-center">
-            🤖 AI Analysis
-            {wine.analysis.confidence !== undefined && (
-              <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                {Math.round(wine.analysis.confidence * 100)}% confidence
-              </span>
-            )}
-          </h4>
-          <div className="text-xs text-green-700 space-y-1">
-            {wine.analysis.wineType && (
-              <div><strong>Type:</strong> {wine.analysis.wineType}</div>
-            )}
-            {wine.analysis.region && (
-              <div><strong>Region:</strong> {wine.analysis.region}</div>
-            )}
-            {wine.analysis.grapeVarieties && wine.analysis.grapeVarieties.length > 0 && (
-              <div><strong>Grapes:</strong> {wine.analysis.grapeVarieties.join(', ')}</div>
-            )}
-            {wine.analysis.interestingFact && (
-              <div className="bg-green-100 p-2 rounded mt-1">
-                <strong>💡 Fact:</strong> {wine.analysis.interestingFact}
-              </div>
-            )}
+        <div className="mb-4 space-y-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <h4 className="text-xs font-medium text-green-800 mb-2 flex items-center">
+              🤖 AI Analysis
+              {wine.analysis.confidence !== undefined && (
+                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                  {Math.round(wine.analysis.confidence * 100)}% confidence
+                </span>
+              )}
+            </h4>
+            <div className="text-xs text-green-700 space-y-1">
+              {wine.analysis.wineType && (
+                <div><strong>Type:</strong> {wine.analysis.wineType}</div>
+              )}
+              {wine.analysis.region && (
+                <div><strong>Region:</strong> {wine.analysis.region}</div>
+              )}
+              {wine.analysis.grapeVarieties && wine.analysis.grapeVarieties.length > 0 && (
+                <div><strong>Grapes:</strong> {wine.analysis.grapeVarieties.join(', ')}</div>
+              )}
+              {wine.analysis.interestingFact && (
+                <div className="bg-green-100 p-2 rounded mt-1">
+                  <strong>💡 Fact:</strong> {wine.analysis.interestingFact}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Taste Profile Display */}
+          {wine.analysis.tasteProfile && (
+            <TasteProfileComponent 
+              profile={wine.analysis.tasteProfile} 
+              size="sm"
+            />
+          )}
         </div>
       )}
 

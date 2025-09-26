@@ -1,3 +1,26 @@
+export interface TasteProfile {
+  // Primary flavors (0-5 scale)
+  fruit?: number;
+  citrus?: number;
+  floral?: number;
+  herbal?: number;
+  earthy?: number;
+  mineral?: number;
+  spice?: number;
+  oak?: number;
+  
+  // Wine characteristics (0-5 scale)
+  sweetness?: number;
+  acidity?: number;
+  tannin?: number;
+  alcohol?: number;
+  body?: number; // Light, Medium, Full (1-5)
+  
+  // Primary flavor descriptors
+  primaryFlavors?: string[];
+  secondaryFlavors?: string[];
+}
+
 export interface WineAnalysis {
   wineName?: string;
   wineType?: string;
@@ -5,6 +28,7 @@ export interface WineAnalysis {
   vintage?: number;
   grapeVarieties?: string[];
   tastingNotes?: string;
+  tasteProfile?: TasteProfile;
   interestingFact?: string;
   confidence?: number; // 0-1 scale
   analysisDate?: string;
