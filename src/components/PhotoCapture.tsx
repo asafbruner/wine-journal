@@ -1,7 +1,9 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
+import { WineAnalysisService } from '../services/wineAnalysisService';
+import type { WineAnalysis } from '../types/wine';
 
 interface PhotoCaptureProps {
-  onPhotoCapture: (photo: string) => void;
+  onPhotoCapture: (photo: string, analysis?: WineAnalysis) => void;
   currentPhoto?: string;
   onRemovePhoto?: () => void;
 }
@@ -12,14 +14,32 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   onRemovePhoto
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const result = e.target?.result as string;
+        
+        // First, capture the photo immediately
         onPhotoCapture(result);
+        
+        // Then analyze the wine photo
+        setIsAnalyzing(true);
+        setAnalysisError(null);
+        
+        try {
+          const analysis = await WineAnalysisService.analyzeWinePhoto(result);
+          onPhotoCapture(result, analysis);
+        } catch (error) {
+          console.error('Wine analysis failed:', error);
+          setAnalysisError('Failed to analyze wine photo. You can still add details manually.');
+        } finally {
+          setIsAnalyzing(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -60,8 +80,16 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
             type="button"
             onClick={triggerFileInput}
             className="btn-primary w-full"
+            disabled={isAnalyzing}
           >
-            📁 Upload Photo
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
+                Analyzing Wine...
+              </>
+            ) : (
+              '📁 Upload Photo'
+            )}
           </button>
         )}
 
@@ -70,9 +98,34 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
             type="button"
             onClick={triggerFileInput}
             className="btn-secondary w-full"
+            disabled={isAnalyzing}
           >
-            📁 Upload Different Photo
+            {isAnalyzing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 inline-block mr-2"></div>
+                Analyzing Wine...
+              </>
+            ) : (
+              '📁 Upload Different Photo'
+            )}
           </button>
+        )}
+
+        {isAnalyzing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              <span className="text-blue-700 text-sm">
+                Analyzing your wine photo with AI...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {analysisError && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-yellow-700 text-sm">{analysisError}</p>
+          </div>
         )}
 
         <input

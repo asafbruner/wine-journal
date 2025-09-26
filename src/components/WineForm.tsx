@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import type { WineFormData } from '../types/wine';
+import type { WineFormData, WineAnalysis } from '../types/wine';
 import { StarRating } from './StarRating';
 import { PhotoCapture } from './PhotoCapture';
+import { WineAnalysisService } from '../services/wineAnalysisService';
 
 interface WineFormProps {
   onSubmit: (data: WineFormData) => void;
@@ -29,7 +30,8 @@ export const WineForm: React.FC<WineFormProps> = ({
       vintage: undefined,
       rating: 3,
       notes: '',
-      photo: undefined
+      photo: undefined,
+      analysis: undefined
     }
   );
 
@@ -67,9 +69,30 @@ export const WineForm: React.FC<WineFormProps> = ({
           vintage: undefined,
           rating: 3,
           notes: '',
-          photo: undefined
+          photo: undefined,
+          analysis: undefined
         });
       }
+    }
+  };
+
+  const handlePhotoCapture = (photo: string, analysis?: WineAnalysis) => {
+    setFormData(prev => ({
+      ...prev,
+      photo,
+      analysis
+    }));
+
+    // Auto-fill form fields from analysis if available and fields are empty
+    if (analysis) {
+      setFormData(prev => ({
+        ...prev,
+        photo,
+        analysis,
+        name: prev.name || analysis.wineName || prev.name,
+        vintage: prev.vintage || analysis.vintage || prev.vintage,
+        notes: prev.notes || (analysis.tastingNotes ? `${analysis.tastingNotes}\n\n${analysis.interestingFact || ''}`.trim() : prev.notes)
+      }));
     }
   };
 
@@ -147,10 +170,55 @@ export const WineForm: React.FC<WineFormProps> = ({
         <div>
           <PhotoCapture
             currentPhoto={formData.photo}
-            onPhotoCapture={(photo) => handleInputChange('photo', photo)}
-            onRemovePhoto={() => handleInputChange('photo', undefined)}
+            onPhotoCapture={handlePhotoCapture}
+            onRemovePhoto={() => setFormData(prev => ({ ...prev, photo: undefined, analysis: undefined }))}
           />
         </div>
+
+        {formData.analysis && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-green-800 mb-2 flex items-center">
+              🤖 AI Wine Analysis
+              {formData.analysis.confidence !== undefined && (
+                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                  {Math.round(formData.analysis.confidence * 100)}% confidence
+                </span>
+              )}
+            </h3>
+            <div className="text-sm text-green-700 space-y-2">
+              {formData.analysis.wineName && (
+                <div><strong>Wine:</strong> {formData.analysis.wineName}</div>
+              )}
+              {formData.analysis.wineType && (
+                <div><strong>Type:</strong> {formData.analysis.wineType}</div>
+              )}
+              {formData.analysis.region && (
+                <div><strong>Region:</strong> {formData.analysis.region}</div>
+              )}
+              {formData.analysis.vintage && (
+                <div><strong>Vintage:</strong> {formData.analysis.vintage}</div>
+              )}
+              {formData.analysis.grapeVarieties && formData.analysis.grapeVarieties.length > 0 && (
+                <div><strong>Grape Varieties:</strong> {formData.analysis.grapeVarieties.join(', ')}</div>
+              )}
+              {formData.analysis.tastingNotes && (
+                <div><strong>Tasting Notes:</strong> {formData.analysis.tastingNotes}</div>
+              )}
+              {formData.analysis.interestingFact && (
+                <div className="bg-green-100 p-2 rounded mt-2">
+                  <strong>💡 Interesting Fact:</strong> {formData.analysis.interestingFact}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, analysis: undefined }))}
+              className="mt-2 text-xs text-green-600 hover:text-green-800 underline"
+            >
+              Hide Analysis
+            </button>
+          </div>
+        )}
 
         <div>
           <label htmlFor="wine-notes" className="block text-sm font-medium text-gray-700 mb-1">

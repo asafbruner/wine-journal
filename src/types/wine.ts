@@ -1,3 +1,15 @@
+export interface WineAnalysis {
+  wineName?: string;
+  wineType?: string;
+  region?: string;
+  vintage?: number;
+  grapeVarieties?: string[];
+  tastingNotes?: string;
+  interestingFact?: string;
+  confidence?: number; // 0-1 scale
+  analysisDate?: string;
+}
+
 export interface Wine {
   id: string;
   name: string;
@@ -5,6 +17,7 @@ export interface Wine {
   rating: number; // 1-5 stars
   notes: string;
   photo?: string; // Base64 encoded image or URL
+  analysis?: WineAnalysis; // AI analysis from Claude
   dateAdded: string; // ISO date string
   dateModified: string; // ISO date string
 }
@@ -15,6 +28,7 @@ export interface WineFormData {
   rating: number;
   notes: string;
   photo?: string; // Base64 encoded image or URL
+  analysis?: WineAnalysis; // AI analysis from Claude
 }
 
 export interface WineContextType {
