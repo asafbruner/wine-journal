@@ -22,6 +22,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   const startCamera = useCallback(async () => {
     setIsLoading(true);
     setCameraError(null);
+    setIsCapturing(true); // Always show camera interface immediately
     
     try {
       console.log('Requesting camera access...');
@@ -59,7 +60,6 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
         };
         
         setStream(mediaStream);
-        setIsCapturing(true);
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -79,9 +79,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
       }
       
       setCameraError(errorMessage);
-      setIsCapturing(true); // Show camera interface even with error
-      // Keep camera interface open to show error message
-      // Don't call setIsCapturing(false) here - let user close it manually
+      // Camera interface is already showing (setIsCapturing(true) called at start)
     }
   }, []);
 
