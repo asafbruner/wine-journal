@@ -4,6 +4,7 @@ export interface Wine {
   vintage?: number;
   rating: number; // 1-5 stars
   notes: string;
+  photo?: string; // Base64 encoded image or URL
   dateAdded: string; // ISO date string
   dateModified: string; // ISO date string
 }
@@ -13,6 +14,7 @@ export interface WineFormData {
   vintage?: number;
   rating: number;
   notes: string;
+  photo?: string; // Base64 encoded image or URL
 }
 
 export interface WineContextType {

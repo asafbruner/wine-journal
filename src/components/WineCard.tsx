@@ -74,6 +74,16 @@ export const WineCard: React.FC<WineCardProps> = ({
         </div>
       </div>
 
+      {wine.photo && (
+        <div className="mb-3">
+          <img
+            src={wine.photo}
+            alt={`${wine.name} bottle`}
+            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+          />
+        </div>
+      )}
+
       <div className="mb-3">
         <StarRating rating={wine.rating} readonly size="sm" />
       </div>

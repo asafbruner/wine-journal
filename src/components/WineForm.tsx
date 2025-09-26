@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { WineFormData } from '../types/wine';
 import { StarRating } from './StarRating';
+import { PhotoCapture } from './PhotoCapture';
 
 interface WineFormProps {
   onSubmit: (data: WineFormData) => void;
@@ -27,7 +28,8 @@ export const WineForm: React.FC<WineFormProps> = ({
       name: '',
       vintage: undefined,
       rating: 3,
-      notes: ''
+      notes: '',
+      photo: undefined
     }
   );
 
@@ -64,7 +66,8 @@ export const WineForm: React.FC<WineFormProps> = ({
           name: '',
           vintage: undefined,
           rating: 3,
-          notes: ''
+          notes: '',
+          photo: undefined
         });
       }
     }
@@ -139,6 +142,14 @@ export const WineForm: React.FC<WineFormProps> = ({
           {errors.rating && (
             <p className="mt-1 text-sm text-red-600">{errors.rating}</p>
           )}
+        </div>
+
+        <div>
+          <PhotoCapture
+            currentPhoto={formData.photo}
+            onPhotoCapture={(photo) => handleInputChange('photo', photo)}
+            onRemovePhoto={() => handleInputChange('photo', undefined)}
+          />
         </div>
 
         <div>
