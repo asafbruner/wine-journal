@@ -1,0 +1,56 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - heading "🍷 Wine Journal" [level=1] [ref=e6]
+    - paragraph [ref=e7]: Keep track of your wine tastings and discoveries
+  - generic [ref=e9]:
+    - heading "Add New Wine" [level=2] [ref=e10]
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - generic [ref=e13]: Wine Name *
+        - textbox "Wine Name *" [ref=e14]
+      - generic [ref=e15]:
+        - generic [ref=e16]: Vintage Year
+        - spinbutton "Vintage Year" [ref=e17]
+      - generic [ref=e18]:
+        - generic [ref=e19]: Rating *
+        - generic [ref=e20]:
+          - button "Rate 1 star" [ref=e21] [cursor=pointer]:
+            - img [ref=e22] [cursor=pointer]
+          - button "Rate 2 stars" [ref=e24] [cursor=pointer]:
+            - img [ref=e25] [cursor=pointer]
+          - button "Rate 3 stars" [ref=e27] [cursor=pointer]:
+            - img [ref=e28] [cursor=pointer]
+          - button "Rate 4 stars" [ref=e30] [cursor=pointer]:
+            - img [ref=e31] [cursor=pointer]
+          - button "Rate 5 stars" [ref=e33] [cursor=pointer]:
+            - img [ref=e34] [cursor=pointer]
+          - generic [ref=e36]: 3 stars
+      - generic [ref=e37]:
+        - generic [ref=e39]: Wine Bottle Photo
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - heading "Take Wine Photo" [level=3] [ref=e42]
+            - button "✕" [ref=e43] [cursor=pointer]
+          - generic [ref=e46]:
+            - paragraph [ref=e47]: 📷 Camera Error
+            - paragraph [ref=e48]: Unable to access camera. Camera not supported by this browser
+            - button "Close" [ref=e49] [cursor=pointer]
+          - generic [ref=e52]:
+            - button "Cancel" [ref=e53] [cursor=pointer]
+            - button "📸 Capture" [ref=e54] [cursor=pointer]:
+              - generic [ref=e55] [cursor=pointer]: 📸
+              - generic [ref=e56] [cursor=pointer]: Capture
+      - generic [ref=e57]:
+        - generic [ref=e58]: Tasting Notes
+        - textbox "Tasting Notes" [ref=e59]
+      - generic [ref=e60]:
+        - button "Add Wine" [ref=e61] [cursor=pointer]
+        - button "Cancel" [ref=e62] [cursor=pointer]
+  - generic [ref=e63]:
+    - img [ref=e65]
+    - heading "No wines yet" [level=3] [ref=e67]
+    - paragraph [ref=e68]: Start building your wine journal by adding your first wine!
+```

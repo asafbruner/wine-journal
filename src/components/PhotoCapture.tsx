@@ -210,9 +210,9 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
 
       {/* Full-screen camera overlay */}
       {isCapturing && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black">
           {/* Header with cancel button */}
-          <div className="flex justify-between items-center p-4 bg-black bg-opacity-50 text-white">
+          <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 bg-black bg-opacity-50 text-white z-30">
             <h3 className="text-lg font-semibold">Take Wine Photo</h3>
             <button
               type="button"
@@ -224,7 +224,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
           </div>
 
           {/* Camera view */}
-          <div className="flex-1 relative flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
                 <div className="text-white text-center">
@@ -265,15 +265,15 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 </div>
                 
                 {/* Instructions */}
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                <div className="absolute top-20 left-1/2 transform -translate-x-1/2 text-white text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
                   <p className="text-sm">Position the wine bottle within the frame</p>
                 </div>
               </>
             )}
           </div>
 
-          {/* Bottom controls */}
-          <div className="p-6 bg-black bg-opacity-50">
+          {/* Bottom controls - ALWAYS visible and at the bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-black bg-opacity-50 z-30">
             <div className="flex justify-center items-center space-x-8">
               <button
                 type="button"
@@ -287,6 +287,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 type="button"
                 onClick={capturePhoto}
                 className="bg-white hover:bg-gray-100 text-black px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-colors flex items-center space-x-2"
+                disabled={isLoading}
               >
                 <span className="text-2xl">📸</span>
                 <span>Capture</span>
