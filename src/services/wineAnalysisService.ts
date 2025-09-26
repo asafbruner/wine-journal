@@ -20,10 +20,26 @@ export class WineAnalysisService {
 
   static async analyzeWinePhoto(photoBase64: string): Promise<WineAnalysis> {
     try {
+      console.log('Starting wine photo analysis...');
+      
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      console.log('API Key available:', !!apiKey);
+      
+      if (!apiKey) {
+        throw new Error('VITE_ANTHROPIC_API_KEY environment variable is not set');
+      }
+      
       const client = this.getClient();
       
       // Remove the data URL prefix if present
       const base64Data = photoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+      console.log('Base64 data length:', base64Data.length);
+      
+      // Detect image format from the data URL
+      const imageFormat = photoBase64.match(/^data:image\/([a-z]+);base64,/)?.[1] || 'jpeg';
+      const mediaType = `image/${imageFormat}` as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+      
+      console.log('Detected image format:', mediaType);
       
       const message = await client.messages.create({
         model: 'claude-3-5-sonnet-20241022',
@@ -36,7 +52,7 @@ export class WineAnalysisService {
                 type: 'image',
                 source: {
                   type: 'base64',
-                  media_type: 'image/jpeg',
+                  media_type: mediaType,
                   data: base64Data,
                 },
               },
@@ -63,15 +79,18 @@ Focus on what you can actually see in the image (label, bottle shape, color, etc
         ]
       });
 
+      console.log('Received response from Claude API');
       const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+      console.log('Response text:', responseText);
       
       // Extract JSON from the response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('Could not parse analysis response');
+        throw new Error('Could not parse analysis response: ' + responseText);
       }
 
       const analysisData = JSON.parse(jsonMatch[0]);
+      console.log('Parsed analysis data:', analysisData);
       
       // Validate and structure the response
       const analysis: WineAnalysis = {
@@ -86,16 +105,33 @@ Focus on what you can actually see in the image (label, bottle shape, color, etc
         analysisDate: new Date().toISOString()
       };
 
+      console.log('Final analysis result:', analysis);
       return analysis;
     } catch (error) {
       console.error('Error analyzing wine photo:', error);
       
-      // Return a fallback analysis
+      // Provide more specific error information
+      let errorMessage = 'Unable to analyze the wine photo. ';
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          errorMessage += 'API key not configured properly.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage += 'Network connection issue.';
+        } else if (error.message.includes('CORS')) {
+          errorMessage += 'Browser security restriction.';
+        } else {
+          errorMessage += `Error: ${error.message}`;
+        }
+      } else {
+        errorMessage += 'Unknown error occurred.';
+      }
+      
+      // Return a fallback analysis with more specific error info
       return {
-        wineName: 'Analysis unavailable',
+        wineName: 'Analysis failed',
         wineType: 'Unknown',
-        tastingNotes: 'Unable to analyze the wine photo. Please try again or enter details manually.',
-        interestingFact: 'Wine analysis requires a clear photo of the wine bottle label.',
+        tastingNotes: errorMessage + ' Please try again or enter details manually.',
+        interestingFact: 'Wine analysis requires a clear photo of the wine bottle label and proper API configuration.',
         confidence: 0,
         analysisDate: new Date().toISOString()
       };
