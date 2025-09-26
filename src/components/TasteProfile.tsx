@@ -72,22 +72,93 @@ export const TasteProfileComponent: React.FC<TasteProfileProps> = ({
     );
   };
 
-  const renderFlavorTags = (flavors: string[] | undefined, title: string, bgColor: string) => {
+  // Wine Folly-style flavor icons mapping
+  const getFlavorIcon = (flavor: string): string => {
+    const flavorLower = flavor.toLowerCase();
+    
+    // Fruits
+    if (flavorLower.includes('blackberry') || flavorLower.includes('black berry')) return '🫐';
+    if (flavorLower.includes('blueberry') || flavorLower.includes('blue berry')) return '🫐';
+    if (flavorLower.includes('raspberry') || flavorLower.includes('red berry')) return '🍇';
+    if (flavorLower.includes('strawberry') || flavorLower.includes('straw berry')) return '🍓';
+    if (flavorLower.includes('cherry') || flavorLower.includes('cherries')) return '🍒';
+    if (flavorLower.includes('plum')) return '🟣';
+    if (flavorLower.includes('apple')) return '🍎';
+    if (flavorLower.includes('pear')) return '🍐';
+    if (flavorLower.includes('peach')) return '🍑';
+    if (flavorLower.includes('apricot')) return '🍑';
+    if (flavorLower.includes('citrus') || flavorLower.includes('lemon') || flavorLower.includes('lime')) return '🍋';
+    if (flavorLower.includes('orange') || flavorLower.includes('grapefruit')) return '🍊';
+    if (flavorLower.includes('melon')) return '🍈';
+    if (flavorLower.includes('fig')) return '🟤';
+    if (flavorLower.includes('date')) return '🟤';
+    if (flavorLower.includes('raisin')) return '🍇';
+    
+    // Spices & Herbs
+    if (flavorLower.includes('vanilla')) return '🌿';
+    if (flavorLower.includes('cinnamon')) return '🟤';
+    if (flavorLower.includes('clove')) return '🟤';
+    if (flavorLower.includes('pepper') || flavorLower.includes('spice')) return '🌶️';
+    if (flavorLower.includes('herb') || flavorLower.includes('thyme') || flavorLower.includes('rosemary')) return '🌿';
+    if (flavorLower.includes('mint')) return '🌿';
+    if (flavorLower.includes('eucalyptus')) return '🌿';
+    if (flavorLower.includes('lavender')) return '💜';
+    
+    // Earth & Minerals
+    if (flavorLower.includes('earth') || flavorLower.includes('soil') || flavorLower.includes('dirt')) return '🌍';
+    if (flavorLower.includes('mineral') || flavorLower.includes('stone') || flavorLower.includes('slate')) return '🪨';
+    if (flavorLower.includes('chalk')) return '⚪';
+    if (flavorLower.includes('wet stone') || flavorLower.includes('petrichor')) return '🪨';
+    
+    // Oak & Wood
+    if (flavorLower.includes('oak') || flavorLower.includes('wood')) return '🌳';
+    if (flavorLower.includes('cedar')) return '🌲';
+    if (flavorLower.includes('pine')) return '🌲';
+    if (flavorLower.includes('smoke') || flavorLower.includes('smoky')) return '💨';
+    
+    // Chocolate & Coffee
+    if (flavorLower.includes('chocolate') || flavorLower.includes('cocoa')) return '🍫';
+    if (flavorLower.includes('coffee') || flavorLower.includes('espresso')) return '☕';
+    if (flavorLower.includes('mocha')) return '☕';
+    
+    // Tobacco & Leather
+    if (flavorLower.includes('tobacco')) return '🍂';
+    if (flavorLower.includes('leather')) return '🟤';
+    
+    // Flowers
+    if (flavorLower.includes('rose') || flavorLower.includes('floral')) return '🌹';
+    if (flavorLower.includes('violet')) return '💜';
+    if (flavorLower.includes('jasmine')) return '🌸';
+    
+    // Nuts
+    if (flavorLower.includes('almond')) return '🥜';
+    if (flavorLower.includes('hazelnut') || flavorLower.includes('walnut')) return '🥜';
+    
+    // Default
+    return '🍷';
+  };
+
+  const renderFlavorIcons = (flavors: string[] | undefined, title: string, bgColor: string) => {
     if (!flavors || flavors.length === 0) return null;
     
     return (
-      <div className="mb-3">
-        <h4 className={`${sizeClasses[size]} font-semibold text-gray-800 mb-2`}>
+      <div className="mb-4">
+        <h4 className={`${sizeClasses[size]} font-semibold text-gray-800 mb-3 text-center`}>
           {title}
         </h4>
-        <div className="flex flex-wrap gap-1">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {flavors.map((flavor, index) => (
-            <span
+            <div
               key={index}
-              className={`${bgColor} text-white px-2 py-1 rounded-full ${sizeClasses[size]} font-medium`}
+              className="flex flex-col items-center p-2 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
             >
-              {flavor}
-            </span>
+              <div className="text-2xl mb-1">
+                {getFlavorIcon(flavor)}
+              </div>
+              <span className={`${sizeClasses[size]} text-gray-700 text-center font-medium leading-tight`}>
+                {flavor}
+              </span>
+            </div>
           ))}
         </div>
       </div>
@@ -110,12 +181,12 @@ export const TasteProfileComponent: React.FC<TasteProfileProps> = ({
 
       {/* Primary Flavors */}
       {(profile.primaryFlavors && profile.primaryFlavors.length > 0) && (
-        renderFlavorTags(profile.primaryFlavors, 'Primary Flavors', 'bg-purple-500')
+        renderFlavorIcons(profile.primaryFlavors, 'Primary Flavors', 'bg-purple-500')
       )}
 
       {/* Secondary Flavors */}
       {(profile.secondaryFlavors && profile.secondaryFlavors.length > 0) && (
-        renderFlavorTags(profile.secondaryFlavors, 'Secondary Flavors', 'bg-pink-500')
+        renderFlavorIcons(profile.secondaryFlavors, 'Secondary Flavors', 'bg-pink-500')
       )}
 
       {/* Flavor Intensity Bars */}
