@@ -79,8 +79,9 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
       }
       
       setCameraError(errorMessage);
-      alert(errorMessage + ' You can still upload photos using the "Upload Photo" button.');
-      setIsCapturing(false);
+      setIsCapturing(true); // Show camera interface even with error
+      // Keep camera interface open to show error message
+      // Don't call setIsCapturing(false) here - let user close it manually
     }
   }, []);
 
