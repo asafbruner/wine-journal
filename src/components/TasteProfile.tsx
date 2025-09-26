@@ -138,7 +138,7 @@ export const TasteProfileComponent: React.FC<TasteProfileProps> = ({
     return '🍷';
   };
 
-  const renderFlavorIcons = (flavors: string[] | undefined, title: string, bgColor: string) => {
+  const renderFlavorIcons = (flavors: string[] | undefined, title: string) => {
     if (!flavors || flavors.length === 0) return null;
     
     return (
@@ -181,12 +181,12 @@ export const TasteProfileComponent: React.FC<TasteProfileProps> = ({
 
       {/* Primary Flavors */}
       {(profile.primaryFlavors && profile.primaryFlavors.length > 0) && (
-        renderFlavorIcons(profile.primaryFlavors, 'Primary Flavors', 'bg-purple-500')
+        renderFlavorIcons(profile.primaryFlavors, 'Primary Flavors')
       )}
 
       {/* Secondary Flavors */}
       {(profile.secondaryFlavors && profile.secondaryFlavors.length > 0) && (
-        renderFlavorIcons(profile.secondaryFlavors, 'Secondary Flavors', 'bg-pink-500')
+        renderFlavorIcons(profile.secondaryFlavors, 'Secondary Flavors')
       )}
 
       {/* Flavor Intensity Bars */}
