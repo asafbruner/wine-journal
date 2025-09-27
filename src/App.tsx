@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import type { Wine, WineFormData } from './types/wine';
 import type { UserCredentials, SignUpData } from './types/auth';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
@@ -7,12 +8,16 @@ import { WineForm } from './components/WineForm';
 import { WineList } from './components/WineList';
 import { LoginForm } from './components/LoginForm';
 import { SignUpForm } from './components/SignUpForm';
+import { AdminLoginForm } from './components/AdminLoginForm';
+import { AdminDashboard } from './components/AdminDashboard';
+import { AuthService } from './services/authService';
 
 const WineJournalApp: React.FC = () => {
   const { wines, addWine, updateWine, deleteWine } = useWineContext();
   const { user, logout } = useAuthContext();
   const [editingWine, setEditingWine] = useState<Wine | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
 
   const handleAddWine = (wineData: WineFormData) => {
     addWine(wineData);
@@ -47,13 +52,23 @@ const WineJournalApp: React.FC = () => {
     setEditingWine(null);
   };
 
+  const handleAdminAccess = () => {
+    navigate('/admin');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <header className="text-center mb-8">
           <div className="relative mb-4">
             {user && (
-              <div className="absolute top-0 right-0">
+              <div className="absolute top-0 right-0 flex space-x-2">
+                <button
+                  onClick={handleAdminAccess}
+                  className="text-sm text-red-600 hover:text-red-500 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+                >
+                  Admin
+                </button>
                 <button
                   onClick={handleLogout}
                   className="text-sm text-blue-600 hover:text-blue-500 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
@@ -114,6 +129,60 @@ const WineJournalApp: React.FC = () => {
   );
 };
 
+const AdminRoute: React.FC = () => {
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleAdminLogin = async (credentials: UserCredentials) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const result = await AuthService.adminLogin(credentials);
+      if (result.success) {
+        setIsAdminAuthenticated(true);
+      } else {
+        setError(result.error || 'Login failed');
+      }
+    } catch (err) {
+      setError('An error occurred during login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    navigate('/');
+  };
+
+  const handleBackToApp = () => {
+    navigate('/');
+  };
+
+  if (!isAdminAuthenticated) {
+    return (
+      <AdminLoginForm
+        onSubmit={handleAdminLogin}
+        onBackToApp={handleBackToApp}
+        isLoading={isLoading}
+        error={error}
+      />
+    );
+  }
+
+  const users = AuthService.getAllUsersForAdmin();
+  
+  return (
+    <AdminDashboard
+      users={users}
+      onLogout={handleAdminLogout}
+    />
+  );
+};
+
 const AuthenticatedApp: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthContext();
 
@@ -128,14 +197,19 @@ const AuthenticatedApp: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <AuthScreen />;
-  }
-
   return (
-    <WineProvider>
-      <WineJournalApp />
-    </WineProvider>
+    <Routes>
+      <Route path="/admin" element={<AdminRoute />} />
+      <Route path="/" element={
+        isAuthenticated ? (
+          <WineProvider>
+            <WineJournalApp />
+          </WineProvider>
+        ) : (
+          <AuthScreen />
+        )
+      } />
+    </Routes>
   );
 };
 
@@ -174,9 +248,11 @@ const AuthScreen: React.FC = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <AuthenticatedApp />
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <AuthenticatedApp />
+      </AuthProvider>
+    </Router>
   );
 }
 

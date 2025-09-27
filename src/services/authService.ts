@@ -143,4 +143,17 @@ export class AuthService {
     localStorage.removeItem(USERS_STORAGE_KEY);
     localStorage.removeItem(CURRENT_USER_KEY);
   }
+
+  // Admin functionality
+  static async adminLogin(credentials: UserCredentials): Promise<{ success: boolean; error?: string }> {
+    // Simple admin check - in production, this should be more secure
+    if (credentials.email === 'admin' && credentials.password === 'admin') {
+      return { success: true };
+    }
+    return { success: false, error: 'Invalid admin credentials' };
+  }
+
+  static getAllUsersForAdmin(): StoredUser[] {
+    return this.getAllUsers();
+  }
 }
