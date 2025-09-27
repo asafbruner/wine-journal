@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { WineAnalysisService } from '../services/wineAnalysisService';
 import type { WineAnalysis } from '../types/wine';
 
@@ -14,8 +14,97 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   onRemovePhoto
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
+  const stopCamera = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+  }, [stream]);
+
+  useEffect(() => {
+    if (showCamera && stream && videoRef.current) {
+      try {
+        const videoEl = videoRef.current as HTMLVideoElement & { srcObject: MediaStream | null };
+        videoEl.srcObject = stream;
+        videoEl.play().catch(() => {});
+      } catch (e) {
+        console.error('Failed to start video:', e);
+      }
+    }
+    return () => {
+      if (!showCamera && videoRef.current) {
+        try {
+          const videoEl = videoRef.current as HTMLVideoElement & { srcObject: MediaStream | null };
+          videoEl.srcObject = null;
+        } catch {}
+      }
+    };
+  }, [showCamera, stream]);
+
+  const openCamera = useCallback(async () => {
+    setAnalysisError(null);
+    try {
+      const media = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false,
+      });
+      setStream(media);
+      setShowCamera(true);
+    } catch (err) {
+      console.error('getUserMedia failed:', err);
+      // Permission denied or device not available: keep overlay closed
+      setShowCamera(false);
+    }
+  }, []);
+
+  const closeCamera = useCallback(() => {
+    setShowCamera(false);
+    stopCamera();
+  }, [stopCamera]);
+
+  const capturePhoto = useCallback(async () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/png');
+
+    // Immediately capture the photo
+    onPhotoCapture(dataUrl);
+
+    // Then analyze the wine photo
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      const analysis = await WineAnalysisService.analyzeWinePhoto(dataUrl);
+      onPhotoCapture(dataUrl, analysis);
+    } catch (error) {
+      console.error('Wine analysis failed:', error);
+      setAnalysisError('Failed to analyze wine photo. You can still add details manually.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+
+    closeCamera();
+  }, [onPhotoCapture, closeCamera]);
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,14 +112,14 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
       const reader = new FileReader();
       reader.onload = async (e) => {
         const result = e.target?.result as string;
-        
+
         // First, capture the photo immediately
         onPhotoCapture(result);
-        
+
         // Then analyze the wine photo
         setIsAnalyzing(true);
         setAnalysisError(null);
-        
+
         try {
           const analysis = await WineAnalysisService.analyzeWinePhoto(result);
           onPhotoCapture(result, analysis);
@@ -76,39 +165,66 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
         )}
 
         {!currentPhoto && (
-          <button
-            type="button"
-            onClick={triggerFileInput}
-            className="btn-primary w-full"
-            disabled={isAnalyzing}
-          >
-            {isAnalyzing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
-                Analyzing Wine...
-              </>
-            ) : (
-              '📁 Upload Photo'
-            )}
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={openCamera}
+              className="btn-secondary w-full"
+              disabled={isAnalyzing}
+            >
+              📷 Take Photo
+            </button>
+            <button
+              type="button"
+              onClick={triggerFileInput}
+              className="btn-primary w-full"
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
+                  Analyzing Wine...
+                </>
+              ) : (
+                '📁 Upload Photo'
+              )}
+            </button>
+          </div>
         )}
 
         {currentPhoto && (
-          <button
-            type="button"
-            onClick={triggerFileInput}
-            className="btn-secondary w-full"
-            disabled={isAnalyzing}
-          >
-            {isAnalyzing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 inline-block mr-2"></div>
-                Analyzing Wine...
-              </>
-            ) : (
-              '📁 Upload Different Photo'
-            )}
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={openCamera}
+              className="btn-secondary w-full"
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 inline-block mr-2"></div>
+                  Analyzing Wine...
+                </>
+              ) : (
+                '📷 Retake Photo'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={triggerFileInput}
+              className="btn-primary w-full"
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
+                  Analyzing Wine...
+                </>
+              ) : (
+                '📁 Upload Different'
+              )}
+            </button>
+          </div>
         )}
 
         {isAnalyzing && (
@@ -136,7 +252,48 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
           className="hidden"
         />
 
+        <canvas ref={canvasRef} className="hidden" />
       </div>
+
+      {showCamera && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-90">
+          <div className="absolute top-4 right-4">
+            <button
+              type="button"
+              onClick={closeCamera}
+              className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center text-lg"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex flex-col items-center justify-center h-full w-full text-white space-y-4">
+            <h3 className="text-2xl font-semibold">Take Wine Photo</h3>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-96 h-64 bg-black rounded-lg border border-gray-600"
+            />
+            <p className="text-sm">Position the wine bottle within the frame</p>
+            <div className="mt-4 flex space-x-3">
+              <button
+                type="button"
+                onClick={capturePhoto}
+                className="btn-primary"
+              >
+                📸 Capture
+              </button>
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -33,7 +33,9 @@ export const StarRating: React.FC<StarRatingProps> = ({
           type="button"
           onClick={() => handleStarClick(star)}
           disabled={readonly}
+          data-testid={`star-${star}`}
           className={`
+            ${star <= rating ? 'filled' : 'empty'}
             ${sizeClasses[size]}
             ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}
             transition-transform duration-150

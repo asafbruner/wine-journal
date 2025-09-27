@@ -1,4 +1,4 @@
-import type { Wine, WineFormData } from '../types/wine';
+import type { Wine, WineFormData, WineWithUser } from '../types/wine';
 
 export class WineService {
   static async getAllWines(userId: string): Promise<Wine[]> {
@@ -100,6 +100,30 @@ export class WineService {
     } catch (error) {
       console.error('Error getting wine:', error);
       return null;
+    }
+  }
+
+  static async getAllWinesForAdmin(): Promise<WineWithUser[]> {
+    try {
+      const response = await fetch('/api/wines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'get-all-wines',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch all wines');
+      }
+
+      const wines = await response.json();
+      return wines as WineWithUser[];
+    } catch (error) {
+      console.error('Error loading all wines for admin:', error);
+      return [];
     }
   }
 

@@ -2,10 +2,26 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Wine Journal Application', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage before each test for better isolation
+    // Initialize database and clear localStorage before each test
+    await page.goto('/api/init-db');
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
     await page.reload();
+    
+    // Sign up a new user for each test
+    const timestamp = Date.now();
+    const testEmail = `winetest${timestamp}@example.com`;
+    
+    await page.click('text=Sign up');
+    await page.fill('input[type="email"]', testEmail);
+    await page.fill('input[placeholder="Enter your name"]', 'Wine Test User');
+    await page.fill('input[placeholder="Enter your password"]', 'password123');
+    await page.fill('input[placeholder="Confirm your password"]', 'password123');
+    await page.click('button[type="submit"]');
+    
+    // Wait for successful signup and redirect to main app
+    await expect(page).toHaveURL(/\/(?!login|signup)/);
+    await expect(page.locator('h1')).toContainText('Wine Journal');
   });
 
   test('should display the main page with title and add button', async ({ page }) => {

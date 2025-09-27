@@ -46,6 +46,12 @@ export interface Wine {
   dateModified: string; // ISO date string
 }
 
+export interface WineWithUser extends Wine {
+  userId: string;
+  userEmail?: string;
+  userName?: string;
+}
+
 export interface WineFormData {
   name: string;
   vintage?: number;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import type { Wine, WineFormData } from './types/wine';
+import type { Wine, WineFormData, WineWithUser } from './types/wine';
 import type { UserCredentials, SignUpData, StoredUser } from './types/auth';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { WineProvider, useWineContext } from './context/WineContext';
@@ -11,6 +11,7 @@ import { SignUpForm } from './components/SignUpForm';
 import { AdminLoginForm } from './components/AdminLoginForm';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AuthService } from './services/authService';
+import { WineService } from './services/wineService';
 
 const WineJournalApp: React.FC = () => {
   const { wines, addWine, updateWine, deleteWine } = useWineContext();
@@ -135,6 +136,8 @@ const AdminRoute: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<StoredUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [wines, setWines] = useState<WineWithUser[]>([]);
+  const [winesLoading, setWinesLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleAdminLogin = async (credentials: UserCredentials) => {
@@ -145,17 +148,24 @@ const AdminRoute: React.FC = () => {
       const result = await AuthService.adminLogin(credentials);
       if (result.success) {
         setIsAdminAuthenticated(true);
-        // Load users after successful login
+        // Load admin data after successful login
         setUsersLoading(true);
-        const usersData = await AuthService.getAllUsersForAdmin();
+        setWinesLoading(true);
+        const [usersData, winesData] = await Promise.all([
+          AuthService.getAllUsersForAdmin(),
+          WineService.getAllWinesForAdmin()
+        ]);
         setUsers(usersData);
+        setWines(winesData);
         setUsersLoading(false);
+        setWinesLoading(false);
       } else {
         setError(result.error || 'Login failed');
       }
     } catch (err) {
       setError('An error occurred during login');
       setUsersLoading(false);
+      setWinesLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -164,6 +174,7 @@ const AdminRoute: React.FC = () => {
   const handleAdminLogout = () => {
     setIsAdminAuthenticated(false);
     setUsers([]);
+    setWines([]);
     navigate('/');
   };
 
@@ -182,7 +193,7 @@ const AdminRoute: React.FC = () => {
     );
   }
 
-  if (usersLoading) {
+  if (usersLoading || winesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -196,24 +207,15 @@ const AdminRoute: React.FC = () => {
   return (
     <AdminDashboard
       users={users}
+      wines={wines}
       onLogout={handleAdminLogout}
     />
   );
 };
 
 const AuthenticatedApp: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuthContext();
+  const { isAuthenticated } = useAuthContext();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Routes>

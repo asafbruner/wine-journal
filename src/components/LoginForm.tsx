@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { UserCredentials } from '../types/auth';
 
 interface LoginFormProps {
@@ -19,6 +19,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     password: '',
   });
 
+  const emailRef = useRef<HTMLInputElement>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(formData);
@@ -31,6 +33,65 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       [name]: value,
     }));
   };
+
+  // Ensure first Tab focuses the email input (Mobile Safari focus management)
+  useEffect(() => {
+    const focusWhenReady = () => {
+      const start = performance.now();
+      const tryFocus = () => {
+        if (emailRef.current) {
+          emailRef.current.focus();
+        } else if (performance.now() - start < 1000) {
+          requestAnimationFrame(tryFocus);
+        }
+      };
+      tryFocus();
+    };
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        const active = document.activeElement as HTMLElement | null;
+        const noneOrPage =
+          !active ||
+          active === document.body ||
+          active === document.documentElement;
+        if (noneOrPage) {
+          e.preventDefault();
+          focusWhenReady();
+        }
+      }
+    };
+    document.addEventListener('keydown', handler, true);
+    return () => document.removeEventListener('keydown', handler, true);
+  }, []);
+
+  // If a global flag was set before this component mounted (from main.tsx),
+  // focus the email input as soon as it's available.
+  useEffect(() => {
+    const w = window as any;
+    if (w.__focusEmailOnMount) {
+      w.__focusEmailOnMount = false;
+      setTimeout(() => {
+        const active = document.activeElement as HTMLElement | null;
+        const noneOrPage =
+          !active ||
+          active === document.body ||
+          active === document.documentElement;
+
+        if (noneOrPage) {
+          const start = performance.now();
+          const tryFocus = () => {
+            if (emailRef.current) {
+              emailRef.current.focus();
+            } else if (performance.now() - start < 1000) {
+              requestAnimationFrame(tryFocus);
+            }
+          };
+          tryFocus();
+        }
+      }, 0);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -63,6 +124,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                   id="email"
                   name="email"
                   type="email"
+                  ref={emailRef}
                   autoComplete="email"
                   required
                   value={formData.email}

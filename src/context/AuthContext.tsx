@@ -35,9 +35,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await AuthService.login(credentials);
       
-      if (result.success && result.user) {
-        setUser(result.user);
-        AuthService.setCurrentUser(result.user);
+      if (result.success) {
+        const u: any = result.user || {};
+        const safeUser: User = {
+          id: u.id || Date.now().toString(36),
+          email: u.email || credentials.email,
+          name: u.name,
+          dateCreated: u.dateCreated || new Date().toISOString(),
+        };
+        setUser(safeUser);
+        AuthService.setCurrentUser(safeUser);
         return true;
       } else {
         setError(result.error || 'Login failed');
@@ -58,9 +65,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await AuthService.signUp(userData);
       
-      if (result.success && result.user) {
-        setUser(result.user);
-        AuthService.setCurrentUser(result.user);
+      if (result.success) {
+        const u: any = result.user || {};
+        const safeUser: User = {
+          id: u.id || Date.now().toString(36),
+          email: u.email || userData.email,
+          name: u.name ?? userData.name,
+          dateCreated: u.dateCreated || new Date().toISOString(),
+        };
+        setUser(safeUser);
+        AuthService.setCurrentUser(safeUser);
         return true;
       } else {
         setError(result.error || 'Sign up failed');

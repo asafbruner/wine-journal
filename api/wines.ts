@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { Wine, WineFormData } from '../src/types/wine';
+import type { Wine, WineFormData, WineWithUser } from '../src/types/wine';
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -12,7 +12,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
     const { action, userId, wineId, wineData } = req.body;
 
-    if (!userId) {
+    const requiresUserId = ['get-wines', 'add-wine', 'update-wine', 'delete-wine'].includes(action);
+    if (requiresUserId && !userId) {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
@@ -26,6 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return await handleUpdateWine(req, res, wineId, userId, wineData as WineFormData);
         case 'delete-wine':
           return await handleDeleteWine(req, res, wineId, userId);
+        case 'get-all-wines':
+          return await handleGetAllWines(req, res);
         default:
           return res.status(400).json({ error: 'Invalid action' });
       }
@@ -54,6 +57,31 @@ async function handleGetWines(req: VercelRequest, res: VercelResponse, userId: s
     photo: wine.photo,
     dateAdded: wine.date_created,
     dateModified: wine.date_created, // Use same date for now
+  }));
+
+  return res.status(200).json(wineList);
+}
+
+async function handleGetAllWines(req: VercelRequest, res: VercelResponse) {
+  const wines = await sql`
+    SELECT w.*, u.email as user_email, u.name as user_name
+    FROM wines w
+    LEFT JOIN users u ON u.id = w.user_id
+    ORDER BY w.date_created DESC
+  `;
+
+  const wineList: WineWithUser[] = wines.map(wine => ({
+    id: wine.id,
+    name: wine.name,
+    vintage: wine.vintage,
+    rating: wine.rating,
+    notes: wine.notes,
+    photo: wine.photo,
+    dateAdded: wine.date_created,
+    dateModified: wine.date_created, // Use same date for now
+    userId: wine.user_id,
+    userEmail: wine.user_email,
+    userName: wine.user_name,
   }));
 
   return res.status(200).json(wineList);

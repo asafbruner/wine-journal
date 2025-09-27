@@ -3,7 +3,9 @@ import bcrypt from 'bcryptjs';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { User, UserCredentials, SignUpData, StoredUser } from '../src/types/auth';
 
-const sql = neon(process.env.DATABASE_URL!);
+// Use in-memory storage for testing when no DATABASE_URL is available
+const inMemoryUsers: any[] = [];
+const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -36,15 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleSignUp(req: VercelRequest, res: VercelResponse, userData: SignUpData) {
-  // Check if user already exists
-  const existingUsers = await sql`
-    SELECT id FROM users WHERE email = ${userData.email.toLowerCase()}
-  `;
-  
-  if (existingUsers.length > 0) {
-    return res.status(400).json({ success: false, error: 'User with this email already exists' });
-  }
-
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(userData.email)) {
@@ -59,11 +52,35 @@ async function handleSignUp(req: VercelRequest, res: VercelResponse, userData: S
   const userId = generateId();
   const passwordHash = await bcrypt.hash(userData.password, 10);
 
-  // Insert new user
-  await sql`
-    INSERT INTO users (id, email, name, password_hash)
-    VALUES (${userId}, ${userData.email.toLowerCase()}, ${userData.name}, ${passwordHash})
-  `;
+  if (sql) {
+    // Use database
+    const existingUsers = await sql`
+      SELECT id FROM users WHERE email = ${userData.email.toLowerCase()}
+    `;
+    
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ success: false, error: 'User with this email already exists' });
+    }
+
+    await sql`
+      INSERT INTO users (id, email, name, password_hash)
+      VALUES (${userId}, ${userData.email.toLowerCase()}, ${userData.name}, ${passwordHash})
+    `;
+  } else {
+    // Use in-memory storage for testing
+    const existingUser = inMemoryUsers.find(u => u.email === userData.email.toLowerCase());
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: 'User with this email already exists' });
+    }
+
+    inMemoryUsers.push({
+      id: userId,
+      email: userData.email.toLowerCase(),
+      name: userData.name,
+      password_hash: passwordHash,
+      date_created: new Date().toISOString(),
+    });
+  }
 
   const user: User = {
     id: userId,
@@ -76,15 +93,26 @@ async function handleSignUp(req: VercelRequest, res: VercelResponse, userData: S
 }
 
 async function handleLogin(req: VercelRequest, res: VercelResponse, credentials: UserCredentials) {
-  const users = await sql`
-    SELECT * FROM users WHERE email = ${credentials.email.toLowerCase()}
-  `;
+  let users: any[] = [];
+  
+  if (sql) {
+    // Use database
+    users = await sql`
+      SELECT * FROM users WHERE email = ${credentials.email.toLowerCase()}
+    `;
+  } else {
+    // Use in-memory storage for testing
+    const user = inMemoryUsers.find(u => u.email === credentials.email.toLowerCase());
+    if (user) {
+      users = [user];
+    }
+  }
   
   if (users.length === 0) {
     return res.status(400).json({ success: false, error: 'Invalid email or password' });
   }
 
-  const user = users[0] as any;
+  const user = users[0];
   const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash);
   
   if (!isValidPassword) {
@@ -109,13 +137,23 @@ async function handleAdminLogin(req: VercelRequest, res: VercelResponse, credent
 }
 
 async function handleGetAllUsers(req: VercelRequest, res: VercelResponse) {
-  const users = await sql`
-    SELECT id, email, name, password_hash, date_created 
-    FROM users 
-    ORDER BY date_created DESC
-  `;
+  let users: any[] = [];
   
-  const storedUsers: StoredUser[] = users.map(user => ({
+  if (sql) {
+    // Use database
+    users = await sql`
+      SELECT id, email, name, password_hash, date_created 
+      FROM users 
+      ORDER BY date_created DESC
+    `;
+  } else {
+    // Use in-memory storage for testing
+    users = [...inMemoryUsers].sort((a, b) => 
+      new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+    );
+  }
+  
+  const storedUsers: StoredUser[] = users.map((user: any) => ({
     id: user.id,
     email: user.email,
     name: user.name,
