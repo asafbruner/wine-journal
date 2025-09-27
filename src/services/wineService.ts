@@ -1,15 +1,19 @@
 import type { Wine, WineFormData } from '../types/wine';
 
-const STORAGE_KEY = 'wine-journal-data';
+const STORAGE_KEY_PREFIX = 'wine-journal-data';
 
 export class WineService {
   private static generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  static getAllWines(): Wine[] {
+  private static getStorageKey(userId: string): string {
+    return `${STORAGE_KEY_PREFIX}-${userId}`;
+  }
+
+  static getAllWines(userId: string): Wine[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = localStorage.getItem(this.getStorageKey(userId));
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Error loading wines from localStorage:', error);
@@ -17,17 +21,17 @@ export class WineService {
     }
   }
 
-  static saveWines(wines: Wine[]): void {
+  static saveWines(userId: string, wines: Wine[]): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
+      localStorage.setItem(this.getStorageKey(userId), JSON.stringify(wines));
     } catch (error) {
       console.error('Error saving wines to localStorage:', error);
       throw new Error('Failed to save wine data');
     }
   }
 
-  static addWine(wineData: WineFormData): Wine {
-    const wines = this.getAllWines();
+  static addWine(userId: string, wineData: WineFormData): Wine {
+    const wines = this.getAllWines(userId);
     const now = new Date().toISOString();
     
     const newWine: Wine = {
@@ -38,12 +42,12 @@ export class WineService {
     };
 
     wines.push(newWine);
-    this.saveWines(wines);
+    this.saveWines(userId, wines);
     return newWine;
   }
 
-  static updateWine(id: string, wineData: WineFormData): Wine | null {
-    const wines = this.getAllWines();
+  static updateWine(userId: string, id: string, wineData: WineFormData): Wine | null {
+    const wines = this.getAllWines(userId);
     const wineIndex = wines.findIndex(wine => wine.id === id);
     
     if (wineIndex === -1) {
@@ -57,28 +61,28 @@ export class WineService {
     };
 
     wines[wineIndex] = updatedWine;
-    this.saveWines(wines);
+    this.saveWines(userId, wines);
     return updatedWine;
   }
 
-  static deleteWine(id: string): boolean {
-    const wines = this.getAllWines();
+  static deleteWine(userId: string, id: string): boolean {
+    const wines = this.getAllWines(userId);
     const filteredWines = wines.filter(wine => wine.id !== id);
     
     if (filteredWines.length === wines.length) {
       return false; // Wine not found
     }
 
-    this.saveWines(filteredWines);
+    this.saveWines(userId, filteredWines);
     return true;
   }
 
-  static getWine(id: string): Wine | undefined {
-    const wines = this.getAllWines();
+  static getWine(userId: string, id: string): Wine | undefined {
+    const wines = this.getAllWines(userId);
     return wines.find(wine => wine.id === id);
   }
 
-  static clearAllWines(): void {
-    localStorage.removeItem(STORAGE_KEY);
+  static clearAllWines(userId: string): void {
+    localStorage.removeItem(this.getStorageKey(userId));
   }
 }
