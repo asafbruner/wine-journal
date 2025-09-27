@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AuthService } from '../authService';
-import type { SignUpData, UserCredentials } from '../../types/auth';
+import type { SignUpData, UserCredentials, User } from '../../types/auth';
+
+// Mock fetch globally
+global.fetch = vi.fn();
 
 describe('AuthService', () => {
+  const mockFetch = fetch as vi.MockedFunction<typeof fetch>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -20,6 +25,18 @@ describe('AuthService', () => {
         name: 'Test User',
       };
 
+      const mockUser: User = {
+        id: 'user-123',
+        email: 'test@example.com',
+        name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, user: mockUser })
+      } as Response);
+
       const result = await AuthService.signUp(userData);
 
       expect(result.success).toBe(true);
@@ -28,6 +45,17 @@ describe('AuthService', () => {
       expect(result.user?.name).toBe('Test User');
       expect(result.user?.id).toBeDefined();
       expect(result.user?.dateCreated).toBeDefined();
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'signup',
+          ...userData,
+        }),
+      });
     });
 
     it('should reject duplicate email addresses', async () => {
@@ -36,10 +64,11 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      // First create a user
-      await AuthService.signUp(userData);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'User with this email already exists' })
+      } as Response);
 
-      // Try to create another user with same email
       const result = await AuthService.signUp(userData);
 
       expect(result.success).toBe(false);
@@ -51,6 +80,11 @@ describe('AuthService', () => {
         email: 'invalid-email',
         password: 'password123',
       };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'Invalid email format' })
+      } as Response);
 
       const result = await AuthService.signUp(userData);
 
@@ -64,6 +98,11 @@ describe('AuthService', () => {
         password: '123',
       };
 
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'Password must be at least 6 characters long' })
+      } as Response);
+
       const result = await AuthService.signUp(userData);
 
       expect(result.success).toBe(false);
@@ -71,65 +110,55 @@ describe('AuthService', () => {
     });
 
     it('should handle case-insensitive email comparison', async () => {
-      const userData1: SignUpData = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
-
-      const userData2: SignUpData = {
+      const userData: SignUpData = {
         email: 'TEST@EXAMPLE.COM',
         password: 'password123',
       };
 
-      // Create first user
-      await AuthService.signUp(userData1);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'User with this email already exists' })
+      } as Response);
 
-      // Try to create second user with same email in different case
-      const result = await AuthService.signUp(userData2);
+      const result = await AuthService.signUp(userData);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('User with this email already exists');
     });
 
-    it('should handle localStorage errors gracefully', async () => {
+    it('should handle network errors gracefully', async () => {
       const userData: SignUpData = {
         email: 'test@example.com',
         password: 'password123',
       };
 
-      // Mock localStorage.setItem to throw an error
-      const originalSetItem = localStorage.setItem;
-      localStorage.setItem = vi.fn(() => {
-        throw new Error('Storage quota exceeded');
-      });
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       const result = await AuthService.signUp(userData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to save user data');
-
-      // Restore original method
-      localStorage.setItem = originalSetItem;
+      expect(result.error).toBe('Failed to create account');
     });
   });
 
   describe('login', () => {
-    const testUser: SignUpData = {
-      email: 'test@example.com',
-      password: 'password123',
-      name: 'Test User',
-    };
-
-    beforeEach(async () => {
-      // Create a test user before each login test
-      await AuthService.signUp(testUser);
-    });
-
     it('should successfully login with correct credentials', async () => {
       const credentials: UserCredentials = {
         email: 'test@example.com',
         password: 'password123',
       };
+
+      const mockUser: User = {
+        id: 'user-123',
+        email: 'test@example.com',
+        name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, user: mockUser })
+      } as Response);
 
       const result = await AuthService.login(credentials);
 
@@ -138,6 +167,17 @@ describe('AuthService', () => {
       expect(result.user?.email).toBe('test@example.com');
       expect(result.user?.name).toBe('Test User');
       expect(result.user?.id).toBeDefined();
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'login',
+          ...credentials,
+        }),
+      });
     });
 
     it('should reject login with incorrect email', async () => {
@@ -145,6 +185,11 @@ describe('AuthService', () => {
         email: 'wrong@example.com',
         password: 'password123',
       };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'Invalid email or password' })
+      } as Response);
 
       const result = await AuthService.login(credentials);
 
@@ -158,6 +203,11 @@ describe('AuthService', () => {
         password: 'wrongpassword',
       };
 
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'Invalid email or password' })
+      } as Response);
+
       const result = await AuthService.login(credentials);
 
       expect(result.success).toBe(false);
@@ -170,48 +220,49 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
+      const mockUser: User = {
+        id: 'user-123',
+        email: 'test@example.com',
+        name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, user: mockUser })
+      } as Response);
+
       const result = await AuthService.login(credentials);
 
       expect(result.success).toBe(true);
       expect(result.user?.email).toBe('test@example.com');
     });
 
-    it('should handle localStorage errors gracefully', async () => {
-      // Mock localStorage.getItem to throw an error
-      const originalGetItem = localStorage.getItem;
-      localStorage.getItem = vi.fn(() => {
-        throw new Error('Storage error');
-      });
-
+    it('should handle network errors gracefully', async () => {
       const credentials: UserCredentials = {
         email: 'test@example.com',
         password: 'password123',
       };
 
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
       const result = await AuthService.login(credentials);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Login failed');
-
-      // Restore original method
-      localStorage.getItem = originalGetItem;
     });
   });
 
   describe('getCurrentUser', () => {
-    it('should return current user when stored', async () => {
-      const userData: SignUpData = {
+    it('should return current user when stored', () => {
+      const mockUser: User = {
+        id: 'user-123',
         email: 'test@example.com',
-        password: 'password123',
         name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
       };
 
-      // Create and set current user
-      const signUpResult = await AuthService.signUp(userData);
-      if (signUpResult.user) {
-        AuthService.setCurrentUser(signUpResult.user);
-      }
-
+      AuthService.setCurrentUser(mockUser);
       const result = AuthService.getCurrentUser();
 
       expect(result).toBeDefined();
@@ -221,7 +272,6 @@ describe('AuthService', () => {
 
     it('should return null when no user is stored', () => {
       const result = AuthService.getCurrentUser();
-
       expect(result).toBeNull();
     });
 
@@ -230,32 +280,28 @@ describe('AuthService', () => {
       localStorage.setItem('wine-journal-current-user', 'invalid-json');
 
       const result = AuthService.getCurrentUser();
-
       expect(result).toBeNull();
     });
   });
 
   describe('setCurrentUser', () => {
-    it('should store user in localStorage', async () => {
-      const userData: SignUpData = {
+    it('should store user in localStorage', () => {
+      const mockUser: User = {
+        id: 'user-123',
         email: 'test@example.com',
-        password: 'password123',
         name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
       };
 
-      const signUpResult = await AuthService.signUp(userData);
-      if (signUpResult.user) {
-        AuthService.setCurrentUser(signUpResult.user);
-
-        const storedUser = AuthService.getCurrentUser();
-        expect(storedUser).toEqual(signUpResult.user);
-      }
+      AuthService.setCurrentUser(mockUser);
+      const storedUser = AuthService.getCurrentUser();
+      expect(storedUser).toEqual(mockUser);
     });
 
     it('should remove user from localStorage when null', () => {
       // First set a user
-      const mockUser = {
-        id: '1',
+      const mockUser: User = {
+        id: 'user-123',
         email: 'test@example.com',
         name: 'Test User',
         dateCreated: '2023-01-01T00:00:00.000Z',
@@ -270,8 +316,8 @@ describe('AuthService', () => {
     });
 
     it('should handle localStorage errors gracefully', () => {
-      const mockUser = {
-        id: '1',
+      const mockUser: User = {
+        id: 'user-123',
         email: 'test@example.com',
         name: 'Test User',
         dateCreated: '2023-01-01T00:00:00.000Z',
@@ -292,18 +338,16 @@ describe('AuthService', () => {
   });
 
   describe('logout', () => {
-    it('should clear current user', async () => {
-      const userData: SignUpData = {
+    it('should clear current user', () => {
+      const mockUser: User = {
+        id: 'user-123',
         email: 'test@example.com',
-        password: 'password123',
         name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
       };
 
-      // Create and set current user
-      const signUpResult = await AuthService.signUp(userData);
-      if (signUpResult.user) {
-        AuthService.setCurrentUser(signUpResult.user);
-      }
+      // Set current user
+      AuthService.setCurrentUser(mockUser);
 
       // Verify user is set
       expect(AuthService.getCurrentUser()).toBeDefined();
@@ -317,18 +361,16 @@ describe('AuthService', () => {
   });
 
   describe('clearAllUsers', () => {
-    it('should clear all user data', async () => {
-      const userData: SignUpData = {
+    it('should clear current user data', () => {
+      const mockUser: User = {
+        id: 'user-123',
         email: 'test@example.com',
-        password: 'password123',
         name: 'Test User',
+        dateCreated: '2023-01-01T00:00:00.000Z',
       };
 
-      // Create user and set as current
-      const signUpResult = await AuthService.signUp(userData);
-      if (signUpResult.user) {
-        AuthService.setCurrentUser(signUpResult.user);
-      }
+      // Set current user
+      AuthService.setCurrentUser(mockUser);
 
       // Verify data exists
       expect(AuthService.getCurrentUser()).toBeDefined();
@@ -338,13 +380,112 @@ describe('AuthService', () => {
 
       // Verify all data is cleared
       expect(AuthService.getCurrentUser()).toBeNull();
-      
-      // Try to login with the same credentials - should fail
-      const loginResult = await AuthService.login({
-        email: userData.email,
-        password: userData.password,
+    });
+  });
+
+  describe('adminLogin', () => {
+    it('should successfully login with admin credentials', async () => {
+      const credentials: UserCredentials = {
+        email: 'admin',
+        password: 'admin',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true })
+      } as Response);
+
+      const result = await AuthService.adminLogin(credentials);
+
+      expect(result.success).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'admin-login',
+          ...credentials,
+        }),
       });
-      expect(loginResult.success).toBe(false);
+    });
+
+    it('should reject invalid admin credentials', async () => {
+      const credentials: UserCredentials = {
+        email: 'wrong',
+        password: 'wrong',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'Invalid admin credentials' })
+      } as Response);
+
+      const result = await AuthService.adminLogin(credentials);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Invalid admin credentials');
+    });
+
+    it('should handle network errors gracefully', async () => {
+      const credentials: UserCredentials = {
+        email: 'admin',
+        password: 'admin',
+      };
+
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await AuthService.adminLogin(credentials);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Admin login failed');
+    });
+  });
+
+  describe('getAllUsersForAdmin', () => {
+    it('should return all users for admin', async () => {
+      const mockUsers = [
+        {
+          id: 'user-1',
+          email: 'user1@example.com',
+          name: 'User 1',
+          passwordHash: 'hash1',
+          dateCreated: '2023-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'user-2',
+          email: 'user2@example.com',
+          name: 'User 2',
+          passwordHash: 'hash2',
+          dateCreated: '2023-01-02T00:00:00.000Z',
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUsers
+      } as Response);
+
+      const result = await AuthService.getAllUsersForAdmin();
+
+      expect(result).toEqual(mockUsers);
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'get-all-users',
+        }),
+      });
+    });
+
+    it('should handle network errors gracefully', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await AuthService.getAllUsersForAdmin();
+
+      expect(result).toEqual([]);
     });
   });
 });

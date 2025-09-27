@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import type { Wine, WineFormData } from './types/wine';
-import type { UserCredentials, SignUpData } from './types/auth';
+import type { UserCredentials, SignUpData, StoredUser } from './types/auth';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { WineProvider, useWineContext } from './context/WineContext';
 import { WineForm } from './components/WineForm';
@@ -133,6 +133,8 @@ const AdminRoute: React.FC = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState<StoredUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleAdminLogin = async (credentials: UserCredentials) => {
@@ -143,11 +145,17 @@ const AdminRoute: React.FC = () => {
       const result = await AuthService.adminLogin(credentials);
       if (result.success) {
         setIsAdminAuthenticated(true);
+        // Load users after successful login
+        setUsersLoading(true);
+        const usersData = await AuthService.getAllUsersForAdmin();
+        setUsers(usersData);
+        setUsersLoading(false);
       } else {
         setError(result.error || 'Login failed');
       }
     } catch (err) {
       setError('An error occurred during login');
+      setUsersLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +163,7 @@ const AdminRoute: React.FC = () => {
 
   const handleAdminLogout = () => {
     setIsAdminAuthenticated(false);
+    setUsers([]);
     navigate('/');
   };
 
@@ -173,7 +182,16 @@ const AdminRoute: React.FC = () => {
     );
   }
 
-  const users = AuthService.getAllUsersForAdmin();
+  if (usersLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <AdminDashboard

@@ -21,8 +21,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.63.1",
+    "@neondatabase/serverless": "^1.0.1",
     "@types/node": "^24.5.2",
     "@vercel/node": "^5.3.24",
+    "bcryptjs": "^3.0.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3"

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Wine, WineFormData, WineContextType } from '../types/wine';
-import { WineService } from '../services/wineService';
 import { useAuthContext } from './AuthContext';
 
 const WineContext = createContext<WineContextType | undefined>(undefined);
@@ -20,41 +19,138 @@ interface WineProviderProps {
 export const WineProvider: React.FC<WineProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuthContext();
   const [wines, setWines] = useState<Wine[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Load wines from localStorage when user changes
+  // Load wines from API when user changes
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const loadedWines = WineService.getAllWines(user.id);
-      setWines(loadedWines);
-    } else {
-      setWines([]);
-    }
+    const loadWines = async () => {
+      if (isAuthenticated && user) {
+        setLoading(true);
+        try {
+          const response = await fetch('/api/wines', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'get-wines',
+              userId: user.id,
+            }),
+          });
+
+          if (response.ok) {
+            const loadedWines = await response.json();
+            setWines(loadedWines);
+          } else {
+            console.error('Error loading wines:', response.statusText);
+            setWines([]);
+          }
+        } catch (error) {
+          console.error('Error loading wines:', error);
+          setWines([]);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setWines([]);
+      }
+    };
+
+    loadWines();
   }, [user, isAuthenticated]);
 
-  const addWine = (wineData: WineFormData) => {
+  const addWine = async (wineData: WineFormData) => {
     if (!user) return;
     
-    const newWine = WineService.addWine(user.id, wineData);
-    setWines(prevWines => [...prevWines, newWine]);
-  };
+    try {
+      const response = await fetch('/api/wines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'add-wine',
+          userId: user.id,
+          wineData,
+        }),
+      });
 
-  const updateWine = (id: string, wineData: WineFormData) => {
-    if (!user) return;
-    
-    const updatedWine = WineService.updateWine(user.id, id, wineData);
-    if (updatedWine) {
-      setWines(prevWines =>
-        prevWines.map(wine => wine.id === id ? updatedWine : wine)
-      );
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.wine) {
+          setWines(prevWines => [...prevWines, result.wine]);
+        }
+      } else {
+        console.error('Error adding wine:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error adding wine:', error);
     }
   };
 
-  const deleteWine = (id: string) => {
+  const updateWine = async (id: string, wineData: WineFormData) => {
     if (!user) return;
     
-    const success = WineService.deleteWine(user.id, id);
-    if (success) {
-      setWines(prevWines => prevWines.filter(wine => wine.id !== id));
+    try {
+      const response = await fetch('/api/wines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update-wine',
+          userId: user.id,
+          wineId: id,
+          wineData,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Update the wine in local state
+          setWines(prevWines =>
+            prevWines.map(wine => 
+              wine.id === id 
+                ? { ...wine, ...wineData, dateModified: new Date().toISOString() }
+                : wine
+            )
+          );
+        }
+      } else {
+        console.error('Error updating wine:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error updating wine:', error);
+    }
+  };
+
+  const deleteWine = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/api/wines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete-wine',
+          userId: user.id,
+          wineId: id,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setWines(prevWines => prevWines.filter(wine => wine.id !== id));
+        }
+      } else {
+        console.error('Error deleting wine:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting wine:', error);
     }
   };
 

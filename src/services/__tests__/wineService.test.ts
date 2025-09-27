@@ -1,17 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WineService } from '../wineService';
-import type { WineFormData } from '../../types/wine';
+import type { WineFormData, Wine } from '../../types/wine';
+
+// Mock fetch globally
+global.fetch = vi.fn();
 
 describe('WineService', () => {
   const testUserId = 'test-user-123';
+  const mockFetch = fetch as vi.MockedFunction<typeof fetch>;
 
   beforeEach(() => {
-    // Clear localStorage before each test
-    WineService.clearAllWines(testUserId);
+    vi.clearAllMocks();
   });
 
   describe('addWine', () => {
-    it('should add a new wine and return it with generated id and timestamps', () => {
+    it('should add a new wine and return it with generated id and timestamps', async () => {
       const wineData: WineFormData = {
         name: 'Château Margaux',
         vintage: 2015,
@@ -19,135 +22,255 @@ describe('WineService', () => {
         notes: 'Exceptional vintage with complex flavors'
       };
 
-      const result = WineService.addWine(testUserId, wineData);
+      const mockWine: Wine = {
+        id: 'wine-123',
+        ...wineData,
+        dateAdded: '2023-01-01T00:00:00.000Z',
+        dateModified: '2023-01-01T00:00:00.000Z'
+      };
 
-      expect(result).toMatchObject(wineData);
-      expect(result.id).toBeDefined();
-      expect(result.dateAdded).toBeDefined();
-      expect(result.dateModified).toBeDefined();
-      expect(result.dateAdded).toBe(result.dateModified);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, wine: mockWine })
+      } as Response);
+
+      const result = await WineService.addWine(testUserId, wineData);
+
+      expect(result.success).toBe(true);
+      expect(result.wine).toMatchObject(wineData);
+      expect(result.wine?.id).toBeDefined();
+      expect(result.wine?.dateAdded).toBeDefined();
+      expect(result.wine?.dateModified).toBeDefined();
     });
 
-    it('should persist wine to localStorage', () => {
+    it('should handle API errors gracefully', async () => {
       const wineData: WineFormData = {
         name: 'Test Wine',
         rating: 3,
         notes: 'Test notes'
       };
 
-      WineService.addWine(testUserId, wineData);
-      const wines = WineService.getAllWines(testUserId);
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      expect(wines).toHaveLength(1);
-      expect(wines[0].name).toBe('Test Wine');
+      const result = await WineService.addWine(testUserId, wineData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Failed to add wine');
     });
   });
 
   describe('getAllWines', () => {
-    it('should return empty array when no wines exist', () => {
-      const wines = WineService.getAllWines(testUserId);
+    it('should return empty array when no wines exist', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => []
+      } as Response);
+
+      const wines = await WineService.getAllWines(testUserId);
       expect(wines).toEqual([]);
     });
 
-    it('should return all wines from localStorage', () => {
-      const wine1 = WineService.addWine(testUserId, { name: 'Wine 1', rating: 4, notes: 'Notes 1' });
-      const wine2 = WineService.addWine(testUserId, { name: 'Wine 2', rating: 3, notes: 'Notes 2' });
+    it('should return all wines from API', async () => {
+      const mockWines: Wine[] = [
+        {
+          id: 'wine-1',
+          name: 'Wine 1',
+          rating: 4,
+          notes: 'Notes 1',
+          dateAdded: '2023-01-01T00:00:00.000Z',
+          dateModified: '2023-01-01T00:00:00.000Z'
+        },
+        {
+          id: 'wine-2',
+          name: 'Wine 2',
+          rating: 3,
+          notes: 'Notes 2',
+          dateAdded: '2023-01-02T00:00:00.000Z',
+          dateModified: '2023-01-02T00:00:00.000Z'
+        }
+      ];
 
-      const wines = WineService.getAllWines(testUserId);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockWines
+      } as Response);
+
+      const wines = await WineService.getAllWines(testUserId);
 
       expect(wines).toHaveLength(2);
-      expect(wines).toContainEqual(wine1);
-      expect(wines).toContainEqual(wine2);
+      expect(wines).toEqual(mockWines);
+    });
+
+    it('should handle API errors and return empty array', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const wines = await WineService.getAllWines(testUserId);
+      expect(wines).toEqual([]);
     });
   });
 
   describe('updateWine', () => {
-    it('should update existing wine and modify timestamp', async () => {
-      const originalWine = WineService.addWine(testUserId, {
-        name: 'Original Wine',
-        rating: 3,
-        notes: 'Original notes'
-      });
-
-      // Wait a bit to ensure different timestamp
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+    it('should update existing wine successfully', async () => {
       const updateData: WineFormData = {
         name: 'Updated Wine',
         rating: 5,
         notes: 'Updated notes'
       };
 
-      const updatedWine = WineService.updateWine(testUserId, originalWine.id, updateData);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true })
+      } as Response);
 
-      expect(updatedWine).not.toBeNull();
-      expect(updatedWine!.name).toBe('Updated Wine');
-      expect(updatedWine!.rating).toBe(5);
-      expect(updatedWine!.notes).toBe('Updated notes');
-      expect(updatedWine!.dateAdded).toBe(originalWine.dateAdded);
-      expect(updatedWine!.dateModified).not.toBe(originalWine.dateModified);
+      const result = await WineService.updateWine(testUserId, 'wine-123', updateData);
+
+      expect(result.success).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith('/api/wines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update-wine',
+          userId: testUserId,
+          wineId: 'wine-123',
+          wineData: updateData,
+        }),
+      });
     });
 
-    it('should return null for non-existent wine', () => {
-      const result = WineService.updateWine(testUserId, 'non-existent-id', {
+    it('should handle update errors', async () => {
+      const updateData: WineFormData = {
         name: 'Test',
         rating: 3,
         notes: 'Test'
-      });
+      };
 
-      expect(result).toBeNull();
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await WineService.updateWine(testUserId, 'wine-123', updateData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Failed to update wine');
     });
   });
 
   describe('deleteWine', () => {
-    it('should delete existing wine and return true', () => {
-      const wine = WineService.addWine(testUserId, {
-        name: 'Wine to Delete',
-        rating: 2,
-        notes: 'Will be deleted'
+    it('should delete existing wine successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true })
+      } as Response);
+
+      const result = await WineService.deleteWine(testUserId, 'wine-123');
+
+      expect(result.success).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith('/api/wines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete-wine',
+          userId: testUserId,
+          wineId: 'wine-123',
+        }),
       });
-
-      const result = WineService.deleteWine(testUserId, wine.id);
-      const wines = WineService.getAllWines(testUserId);
-
-      expect(result).toBe(true);
-      expect(wines).toHaveLength(0);
     });
 
-    it('should return false for non-existent wine', () => {
-      const result = WineService.deleteWine(testUserId, 'non-existent-id');
-      expect(result).toBe(false);
+    it('should handle delete errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await WineService.deleteWine(testUserId, 'wine-123');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Failed to delete wine');
     });
   });
 
   describe('getWine', () => {
-    it('should return wine by id', () => {
-      const wine = WineService.addWine(testUserId, {
+    it('should return wine by id', async () => {
+      const mockWine: Wine = {
+        id: 'wine-123',
         name: 'Specific Wine',
         rating: 4,
-        notes: 'Specific notes'
-      });
+        notes: 'Specific notes',
+        dateAdded: '2023-01-01T00:00:00.000Z',
+        dateModified: '2023-01-01T00:00:00.000Z'
+      };
 
-      const result = WineService.getWine(testUserId, wine.id);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [mockWine]
+      } as Response);
 
-      expect(result).toEqual(wine);
+      const result = await WineService.getWine(testUserId, 'wine-123');
+
+      expect(result).toEqual(mockWine);
     });
 
-    it('should return undefined for non-existent wine', () => {
-      const result = WineService.getWine(testUserId, 'non-existent-id');
-      expect(result).toBeUndefined();
+    it('should return null for non-existent wine', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => []
+      } as Response);
+
+      const result = await WineService.getWine(testUserId, 'non-existent-id');
+      expect(result).toBeNull();
+    });
+
+    it('should handle errors and return null', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await WineService.getWine(testUserId, 'wine-123');
+      expect(result).toBeNull();
     });
   });
 
   describe('clearAllWines', () => {
-    it('should remove all wines from localStorage', () => {
-      WineService.addWine(testUserId, { name: 'Wine 1', rating: 3, notes: 'Notes 1' });
-      WineService.addWine(testUserId, { name: 'Wine 2', rating: 4, notes: 'Notes 2' });
+    it('should clear all wines by deleting them individually', async () => {
+      const mockWines: Wine[] = [
+        {
+          id: 'wine-1',
+          name: 'Wine 1',
+          rating: 3,
+          notes: 'Notes 1',
+          dateAdded: '2023-01-01T00:00:00.000Z',
+          dateModified: '2023-01-01T00:00:00.000Z'
+        },
+        {
+          id: 'wine-2',
+          name: 'Wine 2',
+          rating: 4,
+          notes: 'Notes 2',
+          dateAdded: '2023-01-02T00:00:00.000Z',
+          dateModified: '2023-01-02T00:00:00.000Z'
+        }
+      ];
 
-      WineService.clearAllWines(testUserId);
-      const wines = WineService.getAllWines(testUserId);
+      // Mock getAllWines call
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockWines
+      } as Response);
 
-      expect(wines).toHaveLength(0);
+      // Mock delete calls
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true })
+      } as Response);
+
+      await WineService.clearAllWines(testUserId);
+
+      // Should call getAllWines once and delete twice
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle errors gracefully', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      // Should not throw
+      await expect(WineService.clearAllWines(testUserId)).resolves.toBeUndefined();
     });
   });
 });
