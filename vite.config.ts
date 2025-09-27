@@ -99,10 +99,12 @@ function devApiMockPlugin() {
               });
             }
             const id = generateId();
-            const user = { id, email: body.email, name };
+            const dateCreated = new Date().toISOString();
+            const passwordHash = `mock:${password}`;
+            const user = { id, email: body.email, name, password_hash: passwordHash, date_created: dateCreated };
             usersById.set(id, user);
             usersByEmail.set(email, id);
-            return sendJson(res, 200, { success: true, user });
+            return sendJson(res, 200, { success: true, user: { id, email: body.email, name, dateCreated } });
           }
 
           case 'login': {
@@ -128,6 +130,8 @@ function devApiMockPlugin() {
               id: u.id,
               email: u.email,
               name: u.name,
+              passwordHash: u.password_hash || u.passwordHash || '',
+              dateCreated: u.date_created || u.dateCreated || new Date().toISOString(),
             }));
             return sendJson(res, 200, list);
           }
@@ -144,15 +148,39 @@ function devApiMockPlugin() {
         }
         const body = await readJsonBody(req);
         const { action, userId, wineId, wineData } = body || {};
-        const { winesByUser } = getStore(req);
+        const { winesByUser, usersById } = getStore(req);
 
-        if (!userId) {
+        if (action !== 'get-all-wines' && !userId) {
           return sendJson(res, 400, { error: 'User ID is required' });
         }
 
         switch (action) {
           case 'get-wines': {
             const list = winesByUser.get(userId) || [];
+            return sendJson(res, 200, list);
+          }
+
+          case 'get-all-wines': {
+            const list: any[] = [];
+            for (const [uid, userWines] of Array.from(winesByUser.entries())) {
+              const user = usersById.get(uid) || {};
+              for (const w of userWines) {
+                list.push({
+                  id: w.id,
+                  name: w.name,
+                  vintage: w.vintage,
+                  rating: w.rating,
+                  notes: w.notes,
+                  photo: w.photo,
+                  dateAdded: w.dateAdded,
+                  dateModified: w.dateModified,
+                  userId: uid,
+                  userEmail: user.email,
+                  userName: user.name,
+                });
+              }
+            }
+            list.sort((a, b) => new Date(b.dateAdded || 0).getTime() - new Date(a.dateAdded || 0).getTime());
             return sendJson(res, 200, list);
           }
 

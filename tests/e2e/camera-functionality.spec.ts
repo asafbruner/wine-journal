@@ -1,13 +1,34 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Camera Functionality - Complete User Flow', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-  });
+test.beforeEach(async ({ page }) => {
+  // Initialize DB and ensure clean state
+  await page.goto('/api/init-db');
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
 
-  test('should provide complete camera interface experience', async ({ page, context }) => {
-    // Grant camera permissions
-    await context.grantPermissions(['camera']);
+  // Sign up a fresh user to access the app
+  const timestamp = Date.now();
+  const testEmail = `cameratest${timestamp}@example.com`;
+
+  await page.click('text=Sign up');
+  await page.fill('input[type="email"]', testEmail);
+  await page.fill('input[placeholder="Enter your name"]', 'Camera Test User');
+  await page.fill('input[placeholder="Enter your password"]', 'password123');
+  await page.fill('input[placeholder="Confirm your password"]', 'password123');
+  await page.click('button[type="submit"]');
+
+  // Verify we are on the main app page
+  await expect(page).toHaveURL(/\/(?!login|signup)/);
+  await expect(page.locator('h1')).toContainText('Wine Journal');
+});
+
+  test('should provide complete camera interface experience', async ({ page, context, browserName }) => {
+    // Grant camera permissions where supported (skip on WebKit)
+    if (browserName !== 'webkit') {
+      await context.grantPermissions(['camera']);
+    }
     
     // Step 1: Navigate to wine form
     await page.click('button:has-text("Add New Wine")');
@@ -50,9 +71,11 @@ test.describe('Camera Functionality - Complete User Flow', () => {
     await expect(page.locator('h2:has-text("Add New Wine")')).toBeVisible();
   });
 
-  test('should handle camera errors gracefully', async ({ page, context }) => {
-    // Don't grant camera permissions to simulate error
-    await context.grantPermissions([]);
+  test('should handle camera errors gracefully', async ({ page, context, browserName }) => {
+    // Don't grant camera permissions to simulate error (guard on WebKit)
+    if (browserName !== 'webkit') {
+      await context.grantPermissions([]);
+    }
     
     await page.click('button:has-text("Add New Wine")');
     await page.click('button:has-text("📷 Take Photo")');
@@ -133,11 +156,30 @@ test.describe('Camera Functionality - Complete User Flow', () => {
 
 // Test specifically for the user's reported issue
 test.describe('User Issue: Camera Interface Not Visible', () => {
-  test('should always show camera interface when Take Photo is clicked', async ({ page, context }) => {
+  test('should always show camera interface when Take Photo is clicked', async ({ page, context, browserName }) => {
     // This test specifically addresses the user's issue
-    await context.grantPermissions(['camera']);
+    if (browserName !== 'webkit') {
+      await context.grantPermissions(['camera']);
+    }
     
+    // Initialize DB and sign up a user for this test
+    await page.goto('/api/init-db');
     await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+
+    const ts = Date.now();
+    const email = `cameraissue${ts}@example.com`;
+
+    await page.click('text=Sign up');
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[placeholder="Enter your name"]', 'Camera Issue User');
+    await page.fill('input[placeholder="Enter your password"]', 'password123');
+    await page.fill('input[placeholder="Confirm your password"]', 'password123');
+    await page.click('button[type="submit"]');
+
+    await expect(page).toHaveURL(/\/(?!login|signup)/);
+    await expect(page.locator('h1')).toContainText('Wine Journal');
     
     // Step 1: Click Add New Wine
     await page.click('button:has-text("Add New Wine")');

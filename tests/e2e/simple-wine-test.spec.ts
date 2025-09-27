@@ -43,7 +43,7 @@ test.describe('Simple Wine Test', () => {
     await page.waitForTimeout(2000);
     
     // Check if the wine appears in the list
-    await expect(page.locator('text=Simple Test Wine')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Simple Test Wine' })).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=2020')).toBeVisible();
     await expect(page.locator('text=A simple test wine for testing purposes.')).toBeVisible();
   });

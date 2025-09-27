@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   // Optimize workers for better parallelization
-  workers: process.env.CI ? 2 : '50%',
+  workers: 1,
   reporter: [
     ['html'],
     ['list'], // Add list reporter for better console output during development

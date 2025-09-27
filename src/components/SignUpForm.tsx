@@ -123,7 +123,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Use at least six characters for your password
+                Use at least 6 characters for your password
               </p>
             </div>
 

@@ -21,6 +21,8 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const stopCamera = useCallback(() => {
     if (stream) {
@@ -51,22 +53,29 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
 
   const openCamera = useCallback(async () => {
     setAnalysisError(null);
+    setCameraError(null);
+    setIsCameraLoading(true);
+    // Always show the camera interface, even if permissions fail
+    setShowCamera(true);
     try {
       const media = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
         audio: false,
       });
       setStream(media);
-      setShowCamera(true);
     } catch (err) {
       console.error('getUserMedia failed:', err);
-      // Permission denied or device not available: keep overlay closed
-      setShowCamera(false);
+      // Indicate camera error but keep interface visible
+      setCameraError('Camera Error');
+    } finally {
+      setIsCameraLoading(false);
     }
   }, []);
 
   const closeCamera = useCallback(() => {
     setShowCamera(false);
+    setCameraError(null);
+    setIsCameraLoading(false);
     stopCamera();
   }, [stopCamera]);
 
@@ -274,7 +283,13 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
               playsInline
               className="w-96 h-64 bg-black rounded-lg border border-gray-600"
             />
-            <p className="text-sm">Position the wine bottle within the frame</p>
+            <p className="text-sm">
+              {isCameraLoading
+                ? 'Loading camera...'
+                : cameraError
+                ? 'Camera Error'
+                : 'Position the wine bottle within the frame'}
+            </p>
             <div className="mt-4 flex space-x-3">
               <button
                 type="button"

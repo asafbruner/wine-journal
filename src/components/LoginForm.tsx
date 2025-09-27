@@ -34,7 +34,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }));
   };
 
-  // Ensure first Tab focuses the email input (Mobile Safari focus management)
+  // Ensure the first Tab focuses the email input (robust across browsers including Mobile Safari)
   useEffect(() => {
     const focusWhenReady = () => {
       const start = performance.now();
@@ -48,8 +48,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       tryFocus();
     };
 
+    let firstTabHandled = false;
+
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
+        // On the very first Tab press, force focus to the email input.
+        if (!firstTabHandled) {
+          firstTabHandled = true;
+          e.preventDefault();
+          focusWhenReady();
+          return;
+        }
         const active = document.activeElement as HTMLElement | null;
         const noneOrPage =
           !active ||

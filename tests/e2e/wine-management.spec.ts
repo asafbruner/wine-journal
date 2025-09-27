@@ -117,10 +117,9 @@ test.describe('Wine Management', () => {
     // Wait for wine to appear
     await expect(page.locator('text=Wine to Delete')).toBeVisible();
     
-    // Click delete button
+    // Accept the confirmation dialog then click delete
+    page.on('dialog', dialog => dialog.accept());
     await page.click('[aria-label="Delete wine"]');
-    
-    // The delete button shows a confirmation dialog, so we don't need to click confirm
     
     // Verify the wine is gone
     await expect(page.locator('text=Wine to Delete')).not.toBeVisible();
