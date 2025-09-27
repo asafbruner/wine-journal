@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuthContext } from '../AuthContext';
 import { AuthService } from '../../services/authService';
-import type { UserCredentials, SignUpData } from '../../types/auth';
 
 // Mock AuthService
 vi.mock('../../services/authService');

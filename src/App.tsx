@@ -51,28 +51,27 @@ const WineJournalApp: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <header className="text-center mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex-1"></div>
-            <div className="flex-1 text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                🍷 Wine Journal
-              </h1>
-            </div>
-            <div className="flex-1 text-right">
-              {user && (
-                <div className="flex items-center justify-end space-x-4">
-                  <span className="text-sm text-gray-600">
-                    Welcome, {user.name || user.email}
-                  </span>
-                  <button
-                    onClick={handleLogout}
-                    className="text-sm text-blue-600 hover:text-blue-500"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
+          <div className="relative mb-4">
+            {user && (
+              <div className="absolute top-0 right-0">
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-blue-600 hover:text-blue-500 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              🍷 Wine Journal
+            </h1>
+            {user && (
+              <div className="text-center mb-2">
+                <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                  Welcome, {user.name || user.email}
+                </span>
+              </div>
+            )}
           </div>
           <p className="text-gray-600">
             Keep track of your wine tastings and discoveries

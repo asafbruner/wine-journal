@@ -1,9 +1,7 @@
-import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginForm } from '../LoginForm';
-import type { UserCredentials } from '../../types/auth';
 
 describe('LoginForm', () => {
   const mockOnSubmit = vi.fn();
@@ -147,7 +145,6 @@ describe('LoginForm', () => {
   });
 
   it('should clear error when form is resubmitted', async () => {
-    const user = userEvent.setup();
     const { rerender } = render(<LoginForm {...defaultProps} error="Previous error" />);
 
     expect(screen.getByText('Previous error')).toBeInTheDocument();
