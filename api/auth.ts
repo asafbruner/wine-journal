@@ -3,8 +3,16 @@ import bcrypt from 'bcryptjs';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { User, UserCredentials, SignUpData, StoredUser } from '../src/types/auth';
 
+interface InMemoryUser {
+  id: string;
+  email: string;
+  name?: string;
+  password_hash: string;
+  date_created: string;
+}
+
 // Use in-memory storage for testing when no DATABASE_URL is available
-const inMemoryUsers: any[] = [];
+const inMemoryUsers: InMemoryUser[] = [];
 const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 
 function generateId(): string {
@@ -93,7 +101,7 @@ async function handleSignUp(req: VercelRequest, res: VercelResponse, userData: S
 }
 
 async function handleLogin(req: VercelRequest, res: VercelResponse, credentials: UserCredentials) {
-  let users: any[] = [];
+  let users: InMemoryUser[] = [];
   
   if (sql) {
     // Use database
@@ -137,7 +145,7 @@ async function handleAdminLogin(req: VercelRequest, res: VercelResponse, credent
 }
 
 async function handleGetAllUsers(req: VercelRequest, res: VercelResponse) {
-  let users: any[] = [];
+  let users: InMemoryUser[] = [];
   
   if (sql) {
     // Use database
@@ -153,7 +161,7 @@ async function handleGetAllUsers(req: VercelRequest, res: VercelResponse) {
     );
   }
   
-  const storedUsers: StoredUser[] = users.map((user: any) => ({
+  const storedUsers: StoredUser[] = users.map((user: InMemoryUser) => ({
     id: user.id,
     email: user.email,
     name: user.name,

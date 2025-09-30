@@ -42,11 +42,14 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
       }
     }
     return () => {
-      if (!showCamera && videoRef.current) {
+      const currentVideo = videoRef.current;
+      if (!showCamera && currentVideo) {
         try {
-          const videoEl = videoRef.current as HTMLVideoElement & { srcObject: MediaStream | null };
+          const videoEl = currentVideo as HTMLVideoElement & { srcObject: MediaStream | null };
           videoEl.srcObject = null;
-        } catch {}
+        } catch {
+          // Silently ignore errors when clearing video source
+        }
       }
     };
   }, [showCamera, stream]);

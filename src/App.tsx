@@ -162,7 +162,7 @@ const AdminRoute: React.FC = () => {
       } else {
         setError(result.error || 'Login failed');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during login');
       setUsersLoading(false);
       setWinesLoading(false);

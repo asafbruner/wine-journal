@@ -4,7 +4,7 @@ test.describe('Simple Wine Test', () => {
   test('should initialize database and add a wine', async ({ page }) => {
     // First initialize the database
     await page.goto('/api/init-db');
-    let content = await page.textContent('body');
+    const content = await page.textContent('body');
     expect(content).toContain('success');
     
     // Now go to the app

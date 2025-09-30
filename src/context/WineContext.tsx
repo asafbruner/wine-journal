@@ -4,6 +4,7 @@ import { useAuthContext } from './AuthContext';
 
 const WineContext = createContext<WineContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useWineContext = () => {
   const context = useContext(WineContext);
   if (context === undefined) {

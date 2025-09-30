@@ -41,12 +41,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sql`CREATE INDEX IF NOT EXISTS idx_wines_date_created ON wines(date_created)`;
 
     res.status(200).json({ 
+      success: true,
       message: 'Database tables created successfully',
       tables: ['users', 'wines']
     });
   } catch (error) {
     console.error('Database initialization error:', error);
     res.status(500).json({ 
+      success: false,
       error: 'Failed to initialize database',
       details: error instanceof Error ? error.message : 'Unknown error'
     });

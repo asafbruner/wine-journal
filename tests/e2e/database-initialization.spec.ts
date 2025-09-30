@@ -13,7 +13,7 @@ test.describe('Database Initialization', () => {
   test('should handle database operations after initialization', async ({ page }) => {
     // First initialize the database
     await page.goto('/api/init-db');
-    let content = await page.textContent('body');
+    const content = await page.textContent('body');
     expect(content).toContain('success');
     
     // Now test a simple signup to verify database is working

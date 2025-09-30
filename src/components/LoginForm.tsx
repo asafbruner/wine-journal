@@ -77,7 +77,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   // If a global flag was set before this component mounted (from main.tsx),
   // focus the email input as soon as it's available.
   useEffect(() => {
-    const w = window as any;
+    const w = window as Window & { __focusEmailOnMount?: boolean };
     if (w.__focusEmailOnMount) {
       w.__focusEmailOnMount = false;
       setTimeout(() => {

@@ -4,6 +4,7 @@ import { AuthService } from '../services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -36,12 +37,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await AuthService.login(credentials);
       
       if (result.success) {
-        const u: any = result.user || {};
+        const u: Record<string, unknown> = result.user || {};
         const safeUser: User = {
-          id: u.id || Date.now().toString(36),
-          email: u.email || credentials.email,
-          name: u.name,
-          dateCreated: u.dateCreated || new Date().toISOString(),
+          id: (u.id as string) || Date.now().toString(36),
+          email: (u.email as string) || credentials.email,
+          name: u.name as string | undefined,
+          dateCreated: (u.dateCreated as string) || new Date().toISOString(),
         };
         setUser(safeUser);
         AuthService.setCurrentUser(safeUser);
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(result.error || 'Login failed');
         return false;
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
       return false;
     } finally {
@@ -66,12 +67,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await AuthService.signUp(userData);
       
       if (result.success) {
-        const u: any = result.user || {};
+        const u: Record<string, unknown> = result.user || {};
         const safeUser: User = {
-          id: u.id || Date.now().toString(36),
-          email: u.email || userData.email,
-          name: u.name ?? userData.name,
-          dateCreated: u.dateCreated || new Date().toISOString(),
+          id: (u.id as string) || Date.now().toString(36),
+          email: (u.email as string) || userData.email,
+          name: (u.name as string | undefined) ?? userData.name,
+          dateCreated: (u.dateCreated as string) || new Date().toISOString(),
         };
         setUser(safeUser);
         AuthService.setCurrentUser(safeUser);
@@ -80,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(result.error || 'Sign up failed');
         return false;
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
       return false;
     } finally {

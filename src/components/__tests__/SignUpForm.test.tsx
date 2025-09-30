@@ -232,7 +232,7 @@ describe('SignUpForm', () => {
   it('should display password requirements', () => {
     render(<SignUpForm {...defaultProps} />);
 
-    expect(screen.getByText('Password must be at least 6 characters long')).toBeInTheDocument();
+    expect(screen.getByText('Use at least 6 characters for your password')).toBeInTheDocument();
   });
 
   it('should handle form submission with enter key', async () => {

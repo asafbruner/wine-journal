@@ -1,25 +1,59 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Types for in-memory mock data
+interface MockUser {
+  id: string;
+  email: string;
+  name?: string;
+  password_hash: string;
+  date_created: string;
+  passwordHash?: string;
+  dateCreated?: string;
+}
+
+interface MockWine {
+  id: string;
+  name: string;
+  vintage?: number;
+  rating: number;
+  notes: string;
+  photo?: string;
+  dateAdded: string;
+  dateModified: string;
+}
+
+interface IncomingRequest {
+  method?: string;
+  headers?: Record<string, string | string[] | undefined>;
+  on(event: string, callback: (...args: unknown[]) => void): void;
+}
+
+interface ServerResponse {
+  statusCode?: number;
+  setHeader(name: string, value: string): void;
+  end(data?: string): void;
+}
+
 // Lightweight in-memory mocks for /api in Vite dev server to satisfy E2E tests
 function devApiMockPlugin() {
   // In-memory stores partitioned per User-Agent to avoid cross-project interference
   const partitions = new Map<string, {
-    usersById: Map<string, any>;
+    usersById: Map<string, MockUser>;
     usersByEmail: Map<string, string>;
-    winesByUser: Map<string, any[]>;
+    winesByUser: Map<string, MockWine[]>;
   }>();
 
-  const getStore = (req: any) => {
+  const getStore = (req: IncomingRequest) => {
     const cookieHeader = String(req.headers?.['cookie'] || '');
     const match = /(?:^|;\s*)x-test-session=([^;]+)/.exec(cookieHeader);
     const key = match?.[1] || String(req.headers?.['user-agent'] || 'default');
     let store = partitions.get(key);
     if (!store) {
       store = {
-        usersById: new Map<string, any>(),
+        usersById: new Map<string, MockUser>(),
         usersByEmail: new Map<string, string>(),
-        winesByUser: new Map<string, any[]>(),
+        winesByUser: new Map<string, MockWine[]>(),
       };
       partitions.set(key, store);
     }
@@ -29,10 +63,10 @@ function devApiMockPlugin() {
   const generateId = (): string =>
     Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-  const readJsonBody = async (req: any): Promise<any> =>
+  const readJsonBody = async (req: IncomingRequest): Promise<Record<string, unknown>> =>
     new Promise((resolve) => {
       let raw = '';
-      req.on('data', (chunk: any) => (raw += chunk));
+      req.on('data', (chunk: unknown) => (raw += String(chunk)));
       req.on('end', () => {
         try {
           resolve(raw ? JSON.parse(raw) : {});
@@ -42,7 +76,7 @@ function devApiMockPlugin() {
       });
     });
 
-  const sendJson = (res: any, status: number, data: any) => {
+  const sendJson = (res: ServerResponse, status: number, data: unknown) => {
     res.statusCode = status;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(data));
@@ -50,9 +84,9 @@ function devApiMockPlugin() {
 
   return {
     name: 'dev-api-mock',
-    configureServer(server: any) {
+    configureServer(server: { middlewares: { use: (path: string, handler: (req: IncomingRequest, res: ServerResponse) => void) => void } }) {
       // /api/init-db: reset the in-memory stores (GET or POST)
-      server.middlewares.use('/api/init-db', async (req: any, res: any) => {
+      server.middlewares.use('/api/init-db', async (req: IncomingRequest, res: ServerResponse) => {
         if (req.method !== 'GET' && req.method !== 'POST') {
           return sendJson(res, 405, { error: 'Method not allowed' });
         }
@@ -61,13 +95,14 @@ function devApiMockPlugin() {
         usersByEmail.clear();
         winesByUser.clear();
         return sendJson(res, 200, {
+          success: true,
           message: 'Database tables created successfully',
           tables: ['users', 'wines'],
         });
       });
 
       // /api/auth: signup/login/admin-login/get-all-users
-      server.middlewares.use('/api/auth', async (req: any, res: any) => {
+      server.middlewares.use('/api/auth', async (req: IncomingRequest, res: ServerResponse) => {
         if (req.method !== 'POST') {
           return sendJson(res, 405, { error: 'Method not allowed' });
         }
@@ -142,7 +177,7 @@ function devApiMockPlugin() {
       });
 
       // /api/wines: get-wines/add-wine/update-wine/delete-wine
-      server.middlewares.use('/api/wines', async (req: any, res: any) => {
+      server.middlewares.use('/api/wines', async (req: IncomingRequest, res: ServerResponse) => {
         if (req.method !== 'POST') {
           return sendJson(res, 405, { error: 'Method not allowed' });
         }
@@ -161,7 +196,7 @@ function devApiMockPlugin() {
           }
 
           case 'get-all-wines': {
-            const list: any[] = [];
+            const list: Array<MockWine & { userId: string; userEmail?: string; userName?: string }> = [];
             for (const [uid, userWines] of Array.from(winesByUser.entries())) {
               const user = usersById.get(uid) || {};
               for (const w of userWines) {
@@ -209,7 +244,7 @@ function devApiMockPlugin() {
 
           case 'update-wine': {
             const list = winesByUser.get(userId) || [];
-            const idx = list.findIndex((w: any) => w.id === wineId);
+            const idx = list.findIndex((w: MockWine) => w.id === wineId);
             if (idx === -1) {
               return sendJson(res, 200, {
                 success: false,
@@ -228,7 +263,7 @@ function devApiMockPlugin() {
 
           case 'delete-wine': {
             const list = winesByUser.get(userId) || [];
-            const next = list.filter((w: any) => w.id !== wineId);
+            const next = list.filter((w: MockWine) => w.id !== wineId);
             winesByUser.set(userId, next);
             return sendJson(res, 200, { success: true });
           }

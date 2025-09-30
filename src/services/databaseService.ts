@@ -66,7 +66,7 @@ export class DatabaseService {
         return { success: false, error: 'Invalid email or password' };
       }
 
-      const user = users[0] as any;
+      const user = users[0] as { id: string; email: string; name?: string; password_hash: string; date_created: string };
       const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash);
       
       if (!isValidPassword) {
