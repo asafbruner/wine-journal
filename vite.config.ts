@@ -112,9 +112,9 @@ function devApiMockPlugin() {
 
         switch (action) {
           case 'signup': {
-            const email = (body?.email || '').toLowerCase();
-            const name = body?.name || '';
-            const password = body?.password || '';
+            const email = String(body?.email || '').toLowerCase();
+            const name = String(body?.name || '');
+            const password = String(body?.password || '');
             if (!email || !password) {
               return sendJson(res, 200, {
                 success: false,
@@ -136,14 +136,14 @@ function devApiMockPlugin() {
             const id = generateId();
             const dateCreated = new Date().toISOString();
             const passwordHash = `mock:${password}`;
-            const user = { id, email: body.email, name, password_hash: passwordHash, date_created: dateCreated };
+            const user = { id, email: String(body.email), name, password_hash: passwordHash, date_created: dateCreated };
             usersById.set(id, user);
             usersByEmail.set(email, id);
-            return sendJson(res, 200, { success: true, user: { id, email: body.email, name, dateCreated } });
+            return sendJson(res, 200, { success: true, user: { id, email: String(body.email), name, dateCreated } });
           }
 
           case 'login': {
-            const emailLower = (body?.email || '').toLowerCase();
+            const emailLower = String(body?.email || '').toLowerCase();
             const id = usersByEmail.get(emailLower);
             if (!id) {
               return sendJson(res, 200, {
@@ -182,7 +182,10 @@ function devApiMockPlugin() {
           return sendJson(res, 405, { error: 'Method not allowed' });
         }
         const body = await readJsonBody(req);
-        const { action, userId, wineId, wineData } = body || {};
+        const action = body?.action as string | undefined;
+        const userId = body?.userId as string | undefined;
+        const wineId = body?.wineId as string | undefined;
+        const wineData = body?.wineData as Record<string, unknown> | undefined;
         const { winesByUser, usersById } = getStore(req);
 
         if (action !== 'get-all-wines' && !userId) {
@@ -191,14 +194,14 @@ function devApiMockPlugin() {
 
         switch (action) {
           case 'get-wines': {
-            const list = winesByUser.get(userId) || [];
+            const list = winesByUser.get(userId!) || [];
             return sendJson(res, 200, list);
           }
 
           case 'get-all-wines': {
             const list: Array<MockWine & { userId: string; userEmail?: string; userName?: string }> = [];
             for (const [uid, userWines] of Array.from(winesByUser.entries())) {
-              const user = usersById.get(uid) || {};
+              const user = usersById.get(uid);
               for (const w of userWines) {
                 list.push({
                   id: w.id,
@@ -210,8 +213,8 @@ function devApiMockPlugin() {
                   dateAdded: w.dateAdded,
                   dateModified: w.dateModified,
                   userId: uid,
-                  userEmail: user.email,
-                  userName: user.name,
+                  userEmail: user?.email,
+                  userName: user?.name,
                 });
               }
             }
@@ -224,47 +227,47 @@ function devApiMockPlugin() {
             const now = new Date().toISOString();
             const wine = {
               id,
-              name: wineData?.name || '',
+              name: String(wineData?.name || ''),
               vintage:
                 typeof wineData?.vintage === 'number'
                   ? wineData.vintage
                   : undefined,
               rating:
                 typeof wineData?.rating === 'number' ? wineData.rating : 3,
-              notes: wineData?.notes || '',
-              photo: wineData?.photo,
+              notes: String(wineData?.notes || ''),
+              photo: wineData?.photo as string | undefined,
               dateAdded: now,
               dateModified: now,
             };
-            const list = winesByUser.get(userId) || [];
+            const list = winesByUser.get(userId!) || [];
             list.push(wine);
-            winesByUser.set(userId, list);
+            winesByUser.set(userId!, list);
             return sendJson(res, 200, { success: true, wine });
           }
 
           case 'update-wine': {
-            const list = winesByUser.get(userId) || [];
-            const idx = list.findIndex((w: MockWine) => w.id === wineId);
+            const list = winesByUser.get(userId!) || [];
+            const idx = list.findIndex((w: MockWine) => w.id === wineId!);
             if (idx === -1) {
               return sendJson(res, 200, {
                 success: false,
                 error: 'Wine not found or unauthorized',
               });
             }
-            const updated = {
+            const updated: MockWine = {
               ...list[idx],
-              ...wineData,
+              ...(wineData as Partial<MockWine>),
               dateModified: new Date().toISOString(),
             };
             list[idx] = updated;
-            winesByUser.set(userId, list);
+            winesByUser.set(userId!, list);
             return sendJson(res, 200, { success: true });
           }
 
           case 'delete-wine': {
-            const list = winesByUser.get(userId) || [];
-            const next = list.filter((w: MockWine) => w.id !== wineId);
-            winesByUser.set(userId, next);
+            const list = winesByUser.get(userId!) || [];
+            const next = list.filter((w: MockWine) => w.id !== wineId!);
+            winesByUser.set(userId!, next);
             return sendJson(res, 200, { success: true });
           }
 

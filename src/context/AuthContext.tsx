@@ -36,13 +36,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await AuthService.login(credentials);
       
-      if (result.success) {
-        const u: Record<string, unknown> = result.user || {};
+      if (result.success && result.user) {
+        const u = result.user;
         const safeUser: User = {
-          id: (u.id as string) || Date.now().toString(36),
-          email: (u.email as string) || credentials.email,
-          name: u.name as string | undefined,
-          dateCreated: (u.dateCreated as string) || new Date().toISOString(),
+          id: u.id || Date.now().toString(36),
+          email: u.email || credentials.email,
+          name: u.name,
+          dateCreated: u.dateCreated || new Date().toISOString(),
         };
         setUser(safeUser);
         AuthService.setCurrentUser(safeUser);
@@ -66,13 +66,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await AuthService.signUp(userData);
       
-      if (result.success) {
-        const u: Record<string, unknown> = result.user || {};
+      if (result.success && result.user) {
+        const u = result.user;
         const safeUser: User = {
-          id: (u.id as string) || Date.now().toString(36),
-          email: (u.email as string) || userData.email,
-          name: (u.name as string | undefined) ?? userData.name,
-          dateCreated: (u.dateCreated as string) || new Date().toISOString(),
+          id: u.id || Date.now().toString(36),
+          email: u.email || userData.email,
+          name: u.name ?? userData.name,
+          dateCreated: u.dateCreated || new Date().toISOString(),
         };
         setUser(safeUser);
         AuthService.setCurrentUser(safeUser);
