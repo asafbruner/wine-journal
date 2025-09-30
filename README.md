@@ -37,7 +37,27 @@ npm install
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+4. Open your browser and navigate to `http://localhost:5174`
+
+### Test User Login
+
+For local development, the app comes pre-populated with a test user and 8 sample wines:
+
+**Test Login Credentials:**
+- Email: `test@example.com`
+- Password: `password`
+
+The test account includes a curated wine collection with:
+- Château Margaux 2015 (Bordeaux)
+- Cloudy Bay Sauvignon Blanc (New Zealand)
+- Barolo Riserva (Italy)
+- Dom Pérignon Champagne
+- Opus One (Napa Valley)
+- Penfolds Grange (Australia)
+- Cakebread Cellars Chardonnay
+- Rioja Gran Reserva (Spain)
+
+This allows you to immediately test all features including viewing, sorting, editing, and deleting wines!
 
 ## 🧪 Testing
 

@@ -4,12 +4,14 @@ import { WineCard } from './WineCard';
 
 interface WineListProps {
   wines: Wine[];
+  loading?: boolean;
   onEdit?: (wine: Wine) => void;
   onDelete?: (id: string) => void;
 }
 
 export const WineList: React.FC<WineListProps> = ({
   wines,
+  loading = false,
   onEdit,
   onDelete
 }) => {
@@ -34,6 +36,15 @@ export const WineList: React.FC<WineListProps> = ({
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Loading your wines...</h3>
+        <p className="text-gray-600">Please wait while we fetch your wine collection</p>
+      </div>
+    );
+  }
 
   if (wines.length === 0) {
     return (

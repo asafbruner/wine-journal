@@ -55,6 +55,98 @@ function devApiMockPlugin() {
         usersByEmail: new Map<string, string>(),
         winesByUser: new Map<string, MockWine[]>(),
       };
+      
+      // Pre-populate with a test user and sample wines
+      const testUserId = 'test-user-123';
+      const testUser: MockUser = {
+        id: testUserId,
+        email: 'test@example.com',
+        name: 'Test User',
+        password_hash: 'mock:password',
+        date_created: new Date().toISOString(),
+      };
+      
+      store.usersById.set(testUserId, testUser);
+      store.usersByEmail.set('test@example.com', testUserId);
+      
+      // Pre-populate with sample wines
+      const sampleWines: MockWine[] = [
+        {
+          id: 'wine-1',
+          name: 'Château Margaux 2015',
+          vintage: 2015,
+          rating: 5,
+          notes: 'Exceptional Bordeaux with rich, complex flavors. Dark fruit, cedar, and tobacco notes. Perfect tannins.',
+          dateAdded: new Date('2024-01-15').toISOString(),
+          dateModified: new Date('2024-01-15').toISOString(),
+        },
+        {
+          id: 'wine-2',
+          name: 'Cloudy Bay Sauvignon Blanc',
+          vintage: 2022,
+          rating: 4,
+          notes: 'Crisp and refreshing New Zealand white. Citrus and tropical fruit with a mineral finish.',
+          dateAdded: new Date('2024-02-20').toISOString(),
+          dateModified: new Date('2024-02-20').toISOString(),
+        },
+        {
+          id: 'wine-3',
+          name: 'Barolo Riserva',
+          vintage: 2016,
+          rating: 5,
+          notes: 'Outstanding Nebbiolo from Piedmont. Rose petals, tar, cherry, and earthy undertones. Age-worthy.',
+          dateAdded: new Date('2024-03-10').toISOString(),
+          dateModified: new Date('2024-03-10').toISOString(),
+        },
+        {
+          id: 'wine-4',
+          name: 'Dom Pérignon Champagne',
+          vintage: 2012,
+          rating: 5,
+          notes: 'Elegant and sophisticated. Fine bubbles, brioche, citrus, and white flowers. Celebration perfection!',
+          dateAdded: new Date('2024-04-05').toISOString(),
+          dateModified: new Date('2024-04-05').toISOString(),
+        },
+        {
+          id: 'wine-5',
+          name: 'Opus One',
+          vintage: 2018,
+          rating: 4,
+          notes: 'Napa Valley Bordeaux blend. Blackberry, cassis, and vanilla. Smooth and well-balanced.',
+          dateAdded: new Date('2024-05-12').toISOString(),
+          dateModified: new Date('2024-05-12').toISOString(),
+        },
+        {
+          id: 'wine-6',
+          name: 'Penfolds Grange',
+          vintage: 2017,
+          rating: 5,
+          notes: 'Iconic Australian Shiraz. Powerful, full-bodied with blackberry, chocolate, and spice. Stunning!',
+          dateAdded: new Date('2024-06-18').toISOString(),
+          dateModified: new Date('2024-06-18').toISOString(),
+        },
+        {
+          id: 'wine-7',
+          name: 'Cakebread Cellars Chardonnay',
+          vintage: 2021,
+          rating: 4,
+          notes: 'Classic Napa Chardonnay. Buttery with notes of apple, pear, and subtle oak. Great with seafood.',
+          dateAdded: new Date('2024-07-22').toISOString(),
+          dateModified: new Date('2024-07-22').toISOString(),
+        },
+        {
+          id: 'wine-8',
+          name: 'Rioja Gran Reserva',
+          vintage: 2014,
+          rating: 4,
+          notes: 'Traditional Spanish red. Leather, tobacco, red fruit, and vanilla from American oak aging.',
+          dateAdded: new Date('2024-08-30').toISOString(),
+          dateModified: new Date('2024-08-30').toISOString(),
+        },
+      ];
+      
+      store.winesByUser.set(testUserId, sampleWines);
+      
       partitions.set(key, store);
     }
     return store;
@@ -144,6 +236,7 @@ function devApiMockPlugin() {
 
           case 'login': {
             const emailLower = String(body?.email || '').toLowerCase();
+            const password = String(body?.password || '');
             const id = usersByEmail.get(emailLower);
             if (!id) {
               return sendJson(res, 200, {
@@ -152,7 +245,30 @@ function devApiMockPlugin() {
               });
             }
             const user = usersById.get(id);
-            return sendJson(res, 200, { success: true, user });
+            if (!user) {
+              return sendJson(res, 200, {
+                success: false,
+                error: 'Invalid email or password',
+              });
+            }
+            // Check password (mock passwords are stored as "mock:password")
+            const storedPassword = user.password_hash?.replace('mock:', '') || '';
+            if (storedPassword !== password) {
+              return sendJson(res, 200, {
+                success: false,
+                error: 'Invalid email or password',
+              });
+            }
+            // Return formatted user object to match expected format
+            return sendJson(res, 200, { 
+              success: true, 
+              user: { 
+                id: user.id, 
+                email: user.email, 
+                name: user.name, 
+                dateCreated: user.date_created 
+              } 
+            });
           }
 
           case 'admin-login': {
@@ -194,6 +310,8 @@ function devApiMockPlugin() {
 
         switch (action) {
           case 'get-wines': {
+            // Add a small delay to simulate network latency and show loading animation
+            await new Promise(resolve => setTimeout(resolve, 800));
             const list = winesByUser.get(userId!) || [];
             return sendJson(res, 200, list);
           }

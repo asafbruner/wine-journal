@@ -20,11 +20,13 @@ interface WineProviderProps {
 export const WineProvider: React.FC<WineProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuthContext();
   const [wines, setWines] = useState<Wine[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Load wines from API when user changes
   useEffect(() => {
     const loadWines = async () => {
       if (isAuthenticated && user) {
+        setLoading(true);
         try {
           const response = await fetch('/api/wines', {
             method: 'POST',
@@ -47,9 +49,12 @@ export const WineProvider: React.FC<WineProviderProps> = ({ children }) => {
         } catch (error) {
           console.error('Error loading wines:', error);
           setWines([]);
+        } finally {
+          setLoading(false);
         }
       } else {
         setWines([]);
+        setLoading(false);
       }
     };
 
@@ -157,6 +162,7 @@ export const WineProvider: React.FC<WineProviderProps> = ({ children }) => {
 
   const value: WineContextType = {
     wines,
+    loading,
     addWine,
     updateWine,
     deleteWine,

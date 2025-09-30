@@ -63,6 +63,7 @@ export interface WineFormData {
 
 export interface WineContextType {
   wines: Wine[];
+  loading: boolean;
   addWine: (wineData: WineFormData) => void;
   updateWine: (id: string, wineData: WineFormData) => void;
   deleteWine: (id: string) => void;

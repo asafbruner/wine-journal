@@ -14,7 +14,7 @@ import { AuthService } from './services/authService';
 import { WineService } from './services/wineService';
 
 const WineJournalApp: React.FC = () => {
-  const { wines, addWine, updateWine, deleteWine } = useWineContext();
+  const { wines, loading, addWine, updateWine, deleteWine } = useWineContext();
   const { user, logout } = useAuthContext();
   const [editingWine, setEditingWine] = useState<Wine | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -122,6 +122,7 @@ const WineJournalApp: React.FC = () => {
 
         <WineList
           wines={wines}
+          loading={loading}
           onEdit={handleEditWine}
           onDelete={handleDeleteWine}
         />
