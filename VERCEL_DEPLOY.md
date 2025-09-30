@@ -2,7 +2,7 @@
 
 ## ✅ GitHub: COMPLETE!
 
-Your code is live at: **https://github.com/asafbruner/wine-journal**
+Your code is live at: **https://github.com/asafbruner/wine-journal** (master branch)
 
 ---
 

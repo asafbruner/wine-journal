@@ -35,11 +35,7 @@ git remote add origin git@github.com:YOUR_USERNAME/wine-journal.git
 git push -u origin master
 ```
 
-**If you see an error about 'master' vs 'main':**
-```bash
-git branch -M main
-git push -u origin main
-```
+**Note:** This repository uses the `master` branch as the default deployment branch.
 
 ## Step 3: Deploy to Vercel
 

@@ -6,8 +6,8 @@ Your code is now live at: **https://github.com/asafbruner/wine-journal**
 
 ```
 ✅ Repository: asafbruner/wine-journal
-✅ Branch: main
-✅ Files: 102 files (19,162 lines)
+✅ Branch: master
+✅ Files: 106 files (19,162+ lines)
 ✅ Status: Ready to deploy!
 ```
 
