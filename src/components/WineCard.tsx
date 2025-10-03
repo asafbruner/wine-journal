@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Wine } from '../types/wine';
 import { StarRating } from './StarRating';
-import { TasteProfileComponent } from './TasteProfile';
 
 interface WineCardProps {
   wine: Wine;
@@ -16,14 +15,6 @@ export const WineCard: React.FC<WineCardProps> = ({
   onDelete,
   onClick
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     if (onEdit) {
@@ -46,7 +37,7 @@ export const WineCard: React.FC<WineCardProps> = ({
 
   return (
     <div 
-      className={`card hover:shadow-lg transition-shadow duration-200 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`card hover:shadow-xl transition-all duration-200 ${onClick ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
       onClick={handleCardClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -57,23 +48,41 @@ export const WineCard: React.FC<WineCardProps> = ({
         }
       } : undefined}
     >
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            {wine.name}
-          </h3>
-          {wine.vintage && (
-            <p className="text-sm text-gray-600 mb-2">
-              Vintage: {wine.vintage}
-            </p>
-          )}
+      {/* Photo - Full display without cropping */}
+      {wine.photo && (
+        <div className="mb-4 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+          <img
+            src={wine.photo}
+            alt={`${wine.name} bottle`}
+            className="w-full h-64 object-contain"
+          />
         </div>
-        
-        <div className="flex space-x-2 ml-4">
+      )}
+
+      {/* Wine Name */}
+      <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
+        {wine.name}
+      </h3>
+      
+      {/* Vintage if available */}
+      {wine.vintage && (
+        <p className="text-sm text-gray-600 mb-3 text-center">
+          {wine.vintage}
+        </p>
+      )}
+
+      {/* Star Rating */}
+      <div className="flex justify-center mb-4">
+        <StarRating rating={wine.rating} readonly size="md" />
+      </div>
+
+      {/* Edit/Delete buttons */}
+      {(onEdit || onDelete) && (
+        <div className="flex justify-center space-x-2 pt-3 border-t border-gray-100">
           {onEdit && (
             <button
               onClick={handleEdit}
-              className="p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200"
+              className="p-2 text-gray-400 hover:text-purple-600 transition-colors duration-200 rounded-full hover:bg-purple-50"
               aria-label="Edit wine"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +94,7 @@ export const WineCard: React.FC<WineCardProps> = ({
           {onDelete && (
             <button
               onClick={handleDelete}
-              className="p-2 text-gray-400 hover:text-red-600 transition-colors duration-200"
+              className="p-2 text-gray-400 hover:text-red-600 transition-colors duration-200 rounded-full hover:bg-red-50"
               aria-label="Delete wine"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,75 +103,7 @@ export const WineCard: React.FC<WineCardProps> = ({
             </button>
           )}
         </div>
-      </div>
-
-      {wine.photo && (
-        <div className="mb-3">
-          <img
-            src={wine.photo}
-            alt={`${wine.name} bottle`}
-            className="w-full h-32 object-cover rounded-lg border border-gray-200"
-          />
-        </div>
       )}
-
-      <div className="mb-3">
-        <StarRating rating={wine.rating} readonly size="sm" />
-      </div>
-
-      {wine.analysis && (
-        <div className="mb-4 space-y-3">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <h4 className="text-xs font-medium text-green-800 mb-2 flex items-center">
-              🤖 AI Analysis
-              {wine.analysis.confidence !== undefined && (
-                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                  {Math.round(wine.analysis.confidence * 100)}% confidence
-                </span>
-              )}
-            </h4>
-            <div className="text-xs text-green-700 space-y-1">
-              {wine.analysis.wineType && (
-                <div><strong>Type:</strong> {wine.analysis.wineType}</div>
-              )}
-              {wine.analysis.region && (
-                <div><strong>Region:</strong> {wine.analysis.region}</div>
-              )}
-              {wine.analysis.grapeVarieties && wine.analysis.grapeVarieties.length > 0 && (
-                <div><strong>Grapes:</strong> {wine.analysis.grapeVarieties.join(', ')}</div>
-              )}
-              {wine.analysis.interestingFact && (
-                <div className="bg-green-100 p-2 rounded mt-1">
-                  <strong>💡 Fact:</strong> {wine.analysis.interestingFact}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Taste Profile Display */}
-          {wine.analysis.tasteProfile && (
-            <TasteProfileComponent 
-              profile={wine.analysis.tasteProfile} 
-              size="sm"
-            />
-          )}
-        </div>
-      )}
-
-      {wine.notes && (
-        <div className="mb-4">
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {wine.notes}
-          </p>
-        </div>
-      )}
-
-      <div className="flex justify-between items-center text-xs text-gray-500 pt-3 border-t border-gray-100">
-        <span>Added: {formatDate(wine.dateAdded)}</span>
-        {wine.dateModified !== wine.dateAdded && (
-          <span>Updated: {formatDate(wine.dateModified)}</span>
-        )}
-      </div>
     </div>
   );
 };
