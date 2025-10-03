@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-test.describe('Wine Photo Analysis - Manual Upload Test', () => {
+test.describe.skip('Wine Photo Analysis - Manual Upload Test (requires manual localhost setup)', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app
     await page.goto('http://localhost:5173');

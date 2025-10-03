@@ -19,6 +19,8 @@ interface MockWine {
   rating: number;
   notes: string;
   photo?: string;
+  analysis?: unknown;
+  location?: string;
   dateAdded: string;
   dateModified: string;
 }
@@ -295,14 +297,14 @@ function devApiMockPlugin() {
       // /api/analyze-wine: wine photo analysis
       server.middlewares.use('/api/analyze-wine', async (req: IncomingRequest, res: ServerResponse) => {
         if (req.method !== 'POST') {
-          return sendJson(res, 405, { error: 'Method not allowed' });
+          return sendJson(res, 405, { success: false, error: 'Method not allowed' });
         }
         
         const body = await readJsonBody(req);
         const photoBase64 = body?.photoBase64 as string | undefined;
         
         if (!photoBase64) {
-          return sendJson(res, 400, { error: 'Photo data is required' });
+          return sendJson(res, 400, { success: false, error: 'Photo data is required' });
         }
         
         // Import the actual API handler from the API directory
