@@ -60,38 +60,41 @@ const WineJournalApp: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <div className="relative mb-4">
-            {user && (
-              <div className="absolute top-0 right-0 flex space-x-2">
-                <button
-                  onClick={handleAdminAccess}
-                  className="text-sm text-red-600 hover:text-red-500 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
-                >
-                  Admin
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-blue-600 hover:text-blue-500 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+        <header className="mb-8">
+          {/* Admin/Logout buttons - top left on mobile, top right on desktop */}
+          {user && (
+            <div className="flex justify-start md:justify-end mb-4 space-x-2">
+              <button
+                onClick={handleAdminAccess}
+                className="text-sm text-red-600 hover:text-red-500 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+              >
+                Admin
+              </button>
+              <button
+                onClick={handleLogout}
+                className="text-sm text-blue-600 hover:text-blue-500 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+          
+          {/* Main header content */}
+          <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               🍷 Wine Journal
             </h1>
             {user && (
-              <div className="text-center mb-2">
+              <div className="mb-2">
                 <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                   Welcome, {user.name || user.email}
                 </span>
               </div>
             )}
+            <p className="text-gray-600">
+              Keep track of your wine tastings and discoveries
+            </p>
           </div>
-          <p className="text-gray-600">
-            Keep track of your wine tastings and discoveries
-          </p>
         </header>
 
         <div className="mb-8">
