@@ -292,6 +292,63 @@ function devApiMockPlugin() {
         }
       });
 
+      // /api/analyze-wine: wine photo analysis
+      server.middlewares.use('/api/analyze-wine', async (req: IncomingRequest, res: ServerResponse) => {
+        if (req.method !== 'POST') {
+          return sendJson(res, 405, { error: 'Method not allowed' });
+        }
+        
+        const body = await readJsonBody(req);
+        const photoBase64 = body?.photoBase64 as string | undefined;
+        
+        if (!photoBase64) {
+          return sendJson(res, 400, { error: 'Photo data is required' });
+        }
+        
+        // Import the actual API handler from the API directory
+        try {
+          const analyzeWineModule = await import('./api/analyze-wine.ts');
+          const handler = analyzeWineModule.default;
+          
+          // Create a mock request/response that matches Vercel's format
+          const mockReq = {
+            method: 'POST',
+            body: { photoBase64 },
+          };
+          
+          let responseData: unknown;
+          let responseStatus = 200;
+          
+          const mockRes = {
+            status: (code: number) => ({
+              json: (data: unknown) => {
+                responseStatus = code;
+                responseData = data;
+              },
+            }),
+          };
+          
+          // Call the actual handler
+          await handler(mockReq as never, mockRes as never);
+          
+          return sendJson(res, responseStatus, responseData);
+        } catch (error) {
+          console.error('Error in analyze-wine handler:', error);
+          return sendJson(res, 500, {
+            success: false,
+            error: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            analysis: {
+              wineName: 'Analysis failed',
+              wineType: 'Unknown',
+              tastingNotes: 'Unable to analyze the wine photo. Please try again or enter details manually.',
+              interestingFact: 'Wine analysis requires proper API configuration.',
+              confidence: 0,
+              analysisDate: new Date().toISOString()
+            }
+          });
+        }
+      });
+
       // /api/wines: get-wines/add-wine/update-wine/delete-wine
       server.middlewares.use('/api/wines', async (req: IncomingRequest, res: ServerResponse) => {
         if (req.method !== 'POST') {

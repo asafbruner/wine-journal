@@ -30,6 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rating INTEGER CHECK (rating >= 1 AND rating <= 5),
         notes TEXT,
         photo TEXT,
+        location TEXT,
         date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )

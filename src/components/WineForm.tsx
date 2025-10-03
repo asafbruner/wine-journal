@@ -16,6 +16,7 @@ interface FormErrors {
   vintage?: string;
   rating?: string;
   notes?: string;
+  location?: string;
 }
 
 export const WineForm: React.FC<WineFormProps> = ({
@@ -31,11 +32,13 @@ export const WineForm: React.FC<WineFormProps> = ({
       rating: 3,
       notes: '',
       photo: undefined,
-      analysis: undefined
+      analysis: undefined,
+      location: undefined
     }
   );
 
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -70,10 +73,92 @@ export const WineForm: React.FC<WineFormProps> = ({
           rating: 3,
           notes: '',
           photo: undefined,
-          analysis: undefined
+          analysis: undefined,
+          location: undefined
         });
       }
     }
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setErrors(prev => ({ ...prev, location: 'Geolocation is not supported by your browser' }));
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    setErrors(prev => ({ ...prev, location: undefined }));
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Use reverse geocoding to get a human-readable location
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'WineJournalApp'
+              }
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const address = data.address;
+            
+            // Build a nice location string
+            const locationParts = [];
+            if (address.city) locationParts.push(address.city);
+            else if (address.town) locationParts.push(address.town);
+            else if (address.village) locationParts.push(address.village);
+            
+            if (address.state) locationParts.push(address.state);
+            if (address.country) locationParts.push(address.country);
+            
+            const locationString = locationParts.join(', ') || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+            
+            setFormData(prev => ({
+              ...prev,
+              location: locationString
+            }));
+          } else {
+            // Fallback to coordinates if reverse geocoding fails
+            setFormData(prev => ({
+              ...prev,
+              location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            }));
+          }
+        } catch (error) {
+          // Fallback to coordinates if there's an error
+          setFormData(prev => ({
+            ...prev,
+            location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+          }));
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (error) => {
+        setIsDetectingLocation(false);
+        let errorMessage = 'Unable to detect location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please enable location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        
+        setErrors(prev => ({ ...prev, location: errorMessage }));
+      }
+    );
   };
 
   const handlePhotoCapture = (photo: string, analysis?: WineAnalysis) => {
@@ -242,6 +327,46 @@ export const WineForm: React.FC<WineFormProps> = ({
             rows={4}
             placeholder="Describe the wine's aroma, taste, finish, and your overall impression..."
           />
+        </div>
+
+        <div>
+          <label htmlFor="wine-location" className="block text-sm font-medium text-gray-700 mb-1">
+            Location
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="wine-location"
+              type="text"
+              value={formData.location || ''}
+              onChange={(e) => handleInputChange('location', e.target.value)}
+              className={`form-input flex-1 ${errors.location ? 'border-red-500 focus:ring-red-500' : ''}`}
+              placeholder="e.g., Napa Valley, CA or enter location manually"
+            />
+            <button
+              type="button"
+              onClick={handleDetectLocation}
+              disabled={isDetectingLocation}
+              className="btn-secondary whitespace-nowrap flex items-center gap-1"
+              title="Detect current location"
+            >
+              {isDetectingLocation ? (
+                <>
+                  <span className="animate-spin">⌛</span>
+                  Detecting...
+                </>
+              ) : (
+                <>
+                  📍 Auto-detect
+                </>
+              )}
+            </button>
+          </div>
+          {errors.location && (
+            <p className="mt-1 text-sm text-red-600">{errors.location}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Click "Auto-detect" to use your current location, or type it in manually
+          </p>
         </div>
 
         <div className="flex space-x-3 pt-4">

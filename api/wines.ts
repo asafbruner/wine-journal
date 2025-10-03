@@ -55,6 +55,7 @@ async function handleGetWines(req: VercelRequest, res: VercelResponse, userId: s
     rating: wine.rating,
     notes: wine.notes,
     photo: wine.photo,
+    location: wine.location,
     dateAdded: wine.date_created,
     dateModified: wine.date_created, // Use same date for now
   }));
@@ -77,6 +78,7 @@ async function handleGetAllWines(req: VercelRequest, res: VercelResponse) {
     rating: wine.rating,
     notes: wine.notes,
     photo: wine.photo,
+    location: wine.location,
     dateAdded: wine.date_created,
     dateModified: wine.date_created, // Use same date for now
     userId: wine.user_id,
@@ -91,8 +93,8 @@ async function handleAddWine(req: VercelRequest, res: VercelResponse, userId: st
   const wineId = generateId();
   
   await sql`
-    INSERT INTO wines (id, user_id, name, vintage, rating, notes, photo)
-    VALUES (${wineId}, ${userId}, ${wineData.name}, ${wineData.vintage}, ${wineData.rating}, ${wineData.notes}, ${wineData.photo})
+    INSERT INTO wines (id, user_id, name, vintage, rating, notes, photo, location)
+    VALUES (${wineId}, ${userId}, ${wineData.name}, ${wineData.vintage}, ${wineData.rating}, ${wineData.notes}, ${wineData.photo}, ${wineData.location})
   `;
 
   const wine: Wine = {
@@ -102,6 +104,7 @@ async function handleAddWine(req: VercelRequest, res: VercelResponse, userId: st
     rating: wineData.rating,
     notes: wineData.notes,
     photo: wineData.photo,
+    location: wineData.location,
     dateAdded: new Date().toISOString(),
     dateModified: new Date().toISOString(),
   };
@@ -122,7 +125,7 @@ async function handleUpdateWine(req: VercelRequest, res: VercelResponse, wineId:
   await sql`
     UPDATE wines 
     SET name = ${wineData.name}, vintage = ${wineData.vintage}, rating = ${wineData.rating}, 
-        notes = ${wineData.notes}, photo = ${wineData.photo}
+        notes = ${wineData.notes}, photo = ${wineData.photo}, location = ${wineData.location}
     WHERE id = ${wineId} AND user_id = ${userId}
   `;
 

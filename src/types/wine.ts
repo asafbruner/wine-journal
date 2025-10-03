@@ -42,6 +42,7 @@ export interface Wine {
   notes: string;
   photo?: string; // Base64 encoded image or URL
   analysis?: WineAnalysis; // AI analysis from Claude
+  location?: string; // Location where wine was tasted
   dateAdded: string; // ISO date string
   dateModified: string; // ISO date string
 }
@@ -59,6 +60,7 @@ export interface WineFormData {
   notes: string;
   photo?: string; // Base64 encoded image or URL
   analysis?: WineAnalysis; // AI analysis from Claude
+  location?: string; // Location where wine was tasted
 }
 
 export interface WineContextType {
