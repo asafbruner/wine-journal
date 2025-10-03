@@ -57,6 +57,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       END $$;
     `;
 
+    // Add analysis column if it doesn't exist (migration for taste profile)
+    await sql`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='wines' AND column_name='analysis'
+        ) THEN
+          ALTER TABLE wines ADD COLUMN analysis JSONB;
+        END IF;
+      END $$;
+    `;
+
     // Create indexes for better performance
     await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_wines_user_id ON wines(user_id)`;

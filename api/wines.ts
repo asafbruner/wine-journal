@@ -103,6 +103,7 @@ async function handleGetWines(req: VercelRequest, res: VercelResponse, userId: s
     rating: wine.rating,
     notes: wine.notes,
     photo: wine.photo,
+    analysis: wine.analysis ? (typeof wine.analysis === 'string' ? JSON.parse(wine.analysis) : wine.analysis) : undefined,
     location: wine.location,
     dateAdded: wine.date_created,
     dateModified: wine.date_created, // Use same date for now
@@ -131,6 +132,7 @@ async function handleGetAllWines(req: VercelRequest, res: VercelResponse) {
     rating: wine.rating,
     notes: wine.notes,
     photo: wine.photo,
+    analysis: wine.analysis ? (typeof wine.analysis === 'string' ? JSON.parse(wine.analysis) : wine.analysis) : undefined,
     location: wine.location,
     dateAdded: wine.date_created,
     dateModified: wine.date_created, // Use same date for now
@@ -176,9 +178,12 @@ async function handleAddWine(req: VercelRequest, res: VercelResponse, userId: st
   
   const wineId = generateId();
   
+  // Serialize analysis as JSON string for JSONB storage
+  const analysisJson = wineData.analysis ? JSON.stringify(wineData.analysis) : null;
+  
   await sql`
-    INSERT INTO wines (id, user_id, name, vintage, rating, notes, photo, location)
-    VALUES (${wineId}, ${userId}, ${wineData.name}, ${wineData.vintage || null}, ${wineData.rating}, ${wineData.notes}, ${wineData.photo || null}, ${wineData.location || null})
+    INSERT INTO wines (id, user_id, name, vintage, rating, notes, photo, analysis, location)
+    VALUES (${wineId}, ${userId}, ${wineData.name}, ${wineData.vintage || null}, ${wineData.rating}, ${wineData.notes}, ${wineData.photo || null}, ${analysisJson}, ${wineData.location || null})
   `;
 
   const wine: Wine = {
@@ -188,6 +193,7 @@ async function handleAddWine(req: VercelRequest, res: VercelResponse, userId: st
     rating: wineData.rating,
     notes: wineData.notes,
     photo: wineData.photo,
+    analysis: wineData.analysis,
     location: wineData.location,
     dateAdded: new Date().toISOString(),
     dateModified: new Date().toISOString(),
@@ -211,10 +217,13 @@ async function handleUpdateWine(req: VercelRequest, res: VercelResponse, wineId:
     return res.status(404).json({ success: false, error: 'Wine not found or unauthorized' });
   }
 
+  // Serialize analysis as JSON string for JSONB storage
+  const analysisJson = wineData.analysis ? JSON.stringify(wineData.analysis) : null;
+  
   await sql`
     UPDATE wines 
     SET name = ${wineData.name}, vintage = ${wineData.vintage}, rating = ${wineData.rating}, 
-        notes = ${wineData.notes}, photo = ${wineData.photo}, location = ${wineData.location}
+        notes = ${wineData.notes}, photo = ${wineData.photo}, analysis = ${analysisJson}, location = ${wineData.location}
     WHERE id = ${wineId} AND user_id = ${userId}
   `;
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Wine } from '../types/wine';
 import { WineCard } from './WineCard';
+import { WineDetailModal } from './WineDetailModal';
 
 interface WineListProps {
   wines: Wine[];
@@ -15,6 +16,7 @@ export const WineList: React.FC<WineListProps> = ({
   onEdit,
   onDelete
 }) => {
+  const [selectedWine, setSelectedWine] = useState<Wine | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'rating' | 'dateAdded'>('dateAdded');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -95,9 +97,21 @@ export const WineList: React.FC<WineListProps> = ({
             wine={wine}
             onEdit={onEdit}
             onDelete={onDelete}
+            onClick={setSelectedWine}
           />
         ))}
       </div>
+
+      {/* Detail Modal */}
+      {selectedWine && (
+        <WineDetailModal
+          wine={selectedWine}
+          isOpen={!!selectedWine}
+          onClose={() => setSelectedWine(null)}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      )}
     </div>
   );
 };

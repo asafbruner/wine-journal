@@ -7,12 +7,14 @@ interface WineCardProps {
   wine: Wine;
   onEdit?: (wine: Wine) => void;
   onDelete?: (id: string) => void;
+  onClick?: (wine: Wine) => void;
 }
 
 export const WineCard: React.FC<WineCardProps> = ({
   wine,
   onEdit,
-  onDelete
+  onDelete,
+  onClick
 }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -22,20 +24,39 @@ export const WineCard: React.FC<WineCardProps> = ({
     });
   };
 
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     if (onEdit) {
       onEdit(wine);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
     if (onDelete && window.confirm('Are you sure you want to delete this wine entry?')) {
       onDelete(wine.id);
     }
   };
 
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(wine);
+    }
+  };
+
   return (
-    <div className="card hover:shadow-lg transition-shadow duration-200">
+    <div 
+      className={`card hover:shadow-lg transition-shadow duration-200 ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={handleCardClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      } : undefined}
+    >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">
