@@ -40,14 +40,37 @@ interface WineAnalysis {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false,
+      error: 'Method not allowed' 
+    });
   }
 
   try {
     const { photoBase64 } = req.body;
 
     if (!photoBase64) {
-      return res.status(400).json({ error: 'Photo data is required' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Photo data is required' 
+      });
+    }
+
+    // Check if API key is configured
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('ANTHROPIC_API_KEY is not configured');
+      return res.status(500).json({
+        success: false,
+        error: 'Wine analysis is not configured. Please contact support.',
+        analysis: {
+          wineName: 'Configuration Error',
+          wineType: 'Unknown',
+          tastingNotes: 'Wine analysis requires API configuration. Please enter wine details manually.',
+          interestingFact: 'Contact your administrator to enable wine photo analysis.',
+          confidence: 0,
+          analysisDate: new Date().toISOString()
+        }
+      });
     }
 
     // Initialize Anthropic client with server-side API key
@@ -182,22 +205,35 @@ Base your analysis on what you can see in the image (grape variety, region, vint
 
     // Provide specific error information
     let errorMessage = 'Unable to analyze the wine photo. ';
+    let statusCode = 500;
+    
     if (error instanceof Error) {
-      if (error.message.includes('API key') || error.message.includes('authentication')) {
-        errorMessage += 'API authentication failed.';
-      } else if (error.message.includes('rate limit')) {
-        errorMessage += 'API rate limit exceeded.';
-      } else if (error.message.includes('quota')) {
-        errorMessage += 'API quota exceeded.';
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      if (error.message.includes('API key') || error.message.includes('authentication') || error.message.includes('401')) {
+        errorMessage += 'API authentication failed. Please check configuration.';
+        statusCode = 500;
+      } else if (error.message.includes('rate limit') || error.message.includes('429')) {
+        errorMessage += 'API rate limit exceeded. Please try again later.';
+        statusCode = 429;
+      } else if (error.message.includes('quota') || error.message.includes('402')) {
+        errorMessage += 'API quota exceeded. Please contact support.';
+        statusCode = 500;
+      } else if (error.message.includes('Could not parse')) {
+        errorMessage += 'Unable to parse the wine label. Please ensure the label is clearly visible and try again.';
+        statusCode = 400;
       } else {
-        errorMessage += `Error: ${error.message}`;
+        errorMessage += `${error.message}`;
+        // Keep generic 500 status
       }
     } else {
       errorMessage += 'Unknown server error occurred.';
+      console.error('Non-Error object thrown:', error);
     }
 
-    // Return error response
-    return res.status(500).json({
+    // Return error response with fallback analysis
+    return res.status(statusCode).json({
       success: false,
       error: errorMessage,
       analysis: {

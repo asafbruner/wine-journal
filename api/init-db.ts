@@ -7,7 +7,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL!);
+    if (!process.env.DATABASE_URL) {
+      return res.status(500).json({ 
+        success: false,
+        error: 'Database URL is not configured',
+        details: 'DATABASE_URL environment variable is missing'
+      });
+    }
+    
+    const sql = neon(process.env.DATABASE_URL);
 
     // Create users table
     await sql`
@@ -34,6 +42,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
+    `;
+
+    // Add location column if it doesn't exist (migration)
+    await sql`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='wines' AND column_name='location'
+        ) THEN
+          ALTER TABLE wines ADD COLUMN location TEXT;
+        END IF;
+      END $$;
     `;
 
     // Create indexes for better performance

@@ -19,16 +19,26 @@ export class WineAnalysisService {
 
       console.log('API response status:', response.status);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `API request failed with status ${response.status}`);
-      }
-
       const data = await response.json();
       console.log('API response data:', data);
 
-      if (!data.success || !data.analysis) {
-        throw new Error(data.error || 'Invalid API response format');
+      // If response has an analysis (even with errors), return it
+      // This allows graceful degradation with error messages
+      if (data.analysis) {
+        console.log('Returning analysis result:', data.analysis);
+        return data.analysis;
+      }
+
+      // If no analysis and not successful, throw error
+      if (!response.ok || !data.success) {
+        const errorMessage = data.error || `API request failed with status ${response.status}`;
+        console.error('API error:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      // If successful but no analysis, throw error
+      if (!data.analysis) {
+        throw new Error('Invalid API response format - no analysis data');
       }
 
       console.log('Final analysis result:', data.analysis);

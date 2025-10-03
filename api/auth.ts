@@ -105,9 +105,10 @@ async function handleLogin(req: VercelRequest, res: VercelResponse, credentials:
   
   if (sql) {
     // Use database
-    users = await sql`
+    const dbUsers = await sql`
       SELECT * FROM users WHERE email = ${credentials.email.toLowerCase()}
     `;
+    users = dbUsers as InMemoryUser[];
   } else {
     // Use in-memory storage for testing
     const user = inMemoryUsers.find(u => u.email === credentials.email.toLowerCase());
@@ -149,11 +150,12 @@ async function handleGetAllUsers(req: VercelRequest, res: VercelResponse) {
   
   if (sql) {
     // Use database
-    users = await sql`
+    const dbUsers = await sql`
       SELECT id, email, name, password_hash, date_created 
       FROM users 
       ORDER BY date_created DESC
     `;
+    users = dbUsers as InMemoryUser[];
   } else {
     // Use in-memory storage for testing
     users = [...inMemoryUsers].sort((a, b) => 

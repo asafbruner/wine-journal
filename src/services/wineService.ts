@@ -41,6 +41,16 @@ export class WineService {
       });
 
       const result = await response.json();
+      
+      // Check if the response was successful
+      if (!response.ok) {
+        console.error('Error adding wine - Server response:', response.status, result);
+        return { 
+          success: false, 
+          error: result.error || `Server error: ${response.status}` 
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('Error adding wine:', error);
@@ -64,6 +74,16 @@ export class WineService {
       });
 
       const result = await response.json();
+      
+      // Check if the response was successful
+      if (!response.ok) {
+        console.error('Error updating wine - Server response:', response.status, result);
+        return { 
+          success: false, 
+          error: result.error || `Server error: ${response.status}` 
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('Error updating wine:', error);
@@ -86,6 +106,16 @@ export class WineService {
       });
 
       const result = await response.json();
+      
+      // Check if the response was successful
+      if (!response.ok) {
+        console.error('Error deleting wine - Server response:', response.status, result);
+        return { 
+          success: false, 
+          error: result.error || `Server error: ${response.status}` 
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('Error deleting wine:', error);

@@ -57,6 +57,63 @@ describe('WineService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('Failed to add wine');
     });
+
+    it('should handle 500 server errors with error message', async () => {
+      const wineData: WineFormData = {
+        name: 'Test Wine',
+        rating: 3,
+        notes: 'Test notes'
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ success: false, error: 'Database connection error' })
+      } as Response);
+
+      const result = await WineService.addWine(testUserId, wineData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Database connection error');
+    });
+
+    it('should handle 400 validation errors', async () => {
+      const wineData: WineFormData = {
+        name: '',
+        rating: 3,
+        notes: 'Test notes'
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ success: false, error: 'Wine name is required' })
+      } as Response);
+
+      const result = await WineService.addWine(testUserId, wineData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Wine name is required');
+    });
+
+    it('should handle server errors without error message', async () => {
+      const wineData: WineFormData = {
+        name: 'Test Wine',
+        rating: 3,
+        notes: 'Test notes'
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({})
+      } as Response);
+
+      const result = await WineService.addWine(testUserId, wineData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Server error: 500');
+    });
   });
 
   describe('getAllWines', () => {
@@ -153,6 +210,25 @@ describe('WineService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('Failed to update wine');
     });
+
+    it('should handle 404 errors when wine not found', async () => {
+      const updateData: WineFormData = {
+        name: 'Test',
+        rating: 3,
+        notes: 'Test'
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ success: false, error: 'Wine not found or unauthorized' })
+      } as Response);
+
+      const result = await WineService.updateWine(testUserId, 'non-existent', updateData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Wine not found or unauthorized');
+    });
   });
 
   describe('deleteWine', () => {
@@ -185,6 +261,19 @@ describe('WineService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Failed to delete wine');
+    });
+
+    it('should handle 500 errors when deleting', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ success: false, error: 'Database error' })
+      } as Response);
+
+      const result = await WineService.deleteWine(testUserId, 'wine-123');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Database error');
     });
   });
 
